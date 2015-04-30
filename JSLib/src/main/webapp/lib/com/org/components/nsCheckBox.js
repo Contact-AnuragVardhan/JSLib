@@ -14,12 +14,14 @@ nsCheckBox.initializeComponent = function()
 	this.base.initializeComponent();
 	console.log("In nsCheckBox initializeComponent");
 	this.checkbox = document.createElement('input');
-	this.checkbox.type = "checkbox";
+	this.checkbox.setAttribute("type","checkbox");
+	this.checkbox.setAttribute("id",this.getID() + "#chkBox");
 	//this.checkbox.setAttribute("class","checkbox");
 	//this.checkbox.addEventListener("onChange",this.selectionChangeHandler);
 	this.checkbox.onchange = this.selectionChangeHandler.bind(this);
 	
 	this.label = document.createElement('label');
+	this.label.setAttribute("id",this.getID() + "#label");
 	this.label.onclick = this.labelClickHandler.bind(this);
 	//this.label.setAttribute("class","label");
 	
@@ -37,11 +39,11 @@ nsCheckBox.setComponentProperties = function()
 	this.setLayoutDirection();
 	if(this.hasAttribute("class")) 
 	{
-		this.checkbox.setAttribute("class"," " + this.getAttribute("class"));
+		addStyleClass(this.checkbox,this.getAttribute("class"));
 	}
 	if(this.hasAttribute("labelClass"))
 	{
-		this.label.setAttribute("class"," " + this.getAttribute("labelClass"));
+		addStyleClass(this.label,this.getAttribute("labelClass"));
 	}
 	this.base.setComponentProperties();
 };
@@ -64,11 +66,11 @@ nsCheckBox.propertyChange = function(attrName, oldVal, newVal, setProperty)
 	}
 	else if(attributeName === "class")
 	{
-		this.checkbox.class = newVal;
+		addStyleClass(this.checkbox,newVal);
 	}
-	else if(attributeName === "labelStyle")
+	else if(attributeName === "labelClass")
 	{
-		this.label.class = newVal;
+		addStyleClass(this.label,newVal);
 	}
 	else
 	{

@@ -55,7 +55,7 @@ function includeCssFile(filePath,callback)
     }
 }
 
-function $(elementId)
+function getElement(elementId)
 {
 	if(elementId && elementId.length > 0)
 	{
@@ -106,7 +106,7 @@ function removeDiv(id)
 
 function setData(elementId,propertyName,propertyValue)
 {
-    var element = $(elementId);
+    var element = getElement(elementId);
     //elementId.nodeType = 1 when parameter is html Element else its a property
     if(isElement(element) && propertyName && propertyName.length > 0)
     {
@@ -126,7 +126,7 @@ function setData(elementId,propertyName,propertyValue)
 
 function getData(elementId,propertyName)
 {
-    var element = $(elementId);
+    var element = getElement(elementId);
     //elementId.nodeType = 1 when parameter is html Element else its a property
     if(element && element.nodeType === 1 && propertyName && propertyName.length > 0)
     {
@@ -156,7 +156,7 @@ function getData(elementId,propertyName)
 
 function removeData(elementId,propertyName)
 {
-    var element = $(elementId);
+    var element = getElement(elementId);
     //elementId.nodeType = 1 when parameter is html Element else its a property
     if(element && element.nodeType === 1 && propertyName && propertyName.length > 0)
     {
