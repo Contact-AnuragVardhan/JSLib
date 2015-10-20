@@ -1,845 +1,408 @@
-var nsTextBox = Object.create(nsUIComponent);
-
-nsTextBox.initializeComponent = function() 
+function NSPinTip(component,option)
 {
-	this.base.initializeComponent();
-	this.ITEM_SELECTED = "itemSelected";
-	this.ITEM_UNSELECTED = "itemUnselected";
-	this.TYPE_AUTOTEXT = "text";
-	this.TYPE_AUTOCOMPLETE = "autocomplete";
-	this.TYPE_EMAIL = "email";
-	this.TYPE_NUMBER = "number";
-	this.TYPE_PASSWORD = "password";
-	this.TYPE_URL = "url";
+	this.POS_TOP = "top";
+	this.POS_BOTTOM = "bottom";
+	this.POS_LEFT = "left";
+	this.POS_RIGHT = "right";
+	this.POS_TOPLEFT = "top-left";
+	this.POS_TOPRIGHT = "top-right";
+	this.POS_BOTTOMLEFT = "bottom-left";
+	this.POS_BOTTOMRIGHT = "bottom-right";
+	this.SIZE_LARGE = "large";
+	this.SIZE_MEDIUM = "medium";
+	this.SIZE_LOW = "low";
 	
-	this.__outerContainer = null;
-	this.__textBox = null;
-	this.__list = null;
-	this.__renderer =  null;
+	this.__component = component;
+	this.__position = option["position"];
+	this.__size = option["size"];
+	this.__showOnMouseHover = option["showOnMouseHover"];
+	this.__text = option["text"];
+	this.__templateID = option["template"];
+	this.__extraStyle = option["style"];
+	this.__id = null;
+	this.__divTipContainer = null;
+	this.__divTip = null;
+	this.__divTipArrow = null;
 	this.__itemRenderer = null;
+	this.__currentPosition = null;
+	this.__isVisible = false;
+	this.__styleSuffix = "nsPinTip";
 	
-	this.__dataProvider = null;
-	this.__type = "text";
-	this.__enableAutoComplete = false;
-	this.__matchStartsWith = false;
-	this.__minChars = -1;
-	this.__maxChars = -1;
-	this.__minSearchStartChars = 1;
-	this.__caseSensitive = true;
-	this.__required = false;
-	this.__placeholder = null;
-	this.__displayAsPassword = false;
-	this.__delay = 150;
-	this.__listWidth = -1;
-	this.__maxListHeight = 300;
-	this.__noRecordsFoundMessage = "No Records Found";
-	//can be [a-zA-Z0-9,-]
-	this.__restrict = null;
-	this.__pattern = null;
-	
-	this.__labelField = "label";
-	this.__labelFunction = null;
-	this.__templateID = null;
-	this.__setDataCallBack = null;
-	this.__clearDataCallBack = null;
-	this.__enableKeyboardNavigation = false;
-	this.__enableMultipleSelection = false;
-	this.__multiSelectionSeparator = ";";
-	this.__customScrollerRequired = false;
-	
-	this.__selectedItem = null;
-	this.__selectedItems = new Array();	
-	this.__timerInstance = null;
-	this.__componentMeasurement = {};
-	
-	this.__keyUpRef = null;
-	this.__keyPressedRef = null;
-	this.__itemNavigationRef = null;
-	this.__itemSelectRef = null;
-	this.__itemUnSelectRef = null;
-	this.__pasteRef = null;
-	this.__focusInRef = null;
-	this.__documentClickRef = null;
-	this.__documentKeyUpRef = null;
-	this.__textBoxFocusOutRef = null;
-};
-
-nsTextBox.setText = function(text)
-{
-	if(this.__textBox)
-	{
-		if(this.__maxChars > -1 && text.length > this.__maxChars)
-		{
-			text = text.substring(0, this.__maxChars);
-		}
-		this.__textBox.value = text;
-	}
-};
-
-nsTextBox.getText = function()
-{
-	if(this.__textBox)
-	{
-		return this.__textBox.value;
-	}
-	return null;
-};
-
-nsTextBox.getNoMessage = function()
-{
-	return this.__noRecordsFoundMessage;
-};
-
-//commenting this as selectedIndex will be relative to filtered dataSource
-/*nsTextBox.getSelectedIndex = function()
-{
-	if(this.__list)
-	{
-		return this.__list.getSelectedIndex();
-	}
-	return -1;
-};*/
-
-nsTextBox.getSelectedItem = function()
-{
-	return this.__selectedItem;
-};
-
-/*nsTextBox.getSelectedIndexes = function()
-{
-	if(this.__list)
-	{
-		return this.__list.getSelectedIndexes();
-	}
-	return null;
-};*/
-
-nsTextBox.getSelectedItems = function()
-{
-	return this.__selectedItems;
-};
-
-nsTextBox.setComponentProperties = function() 
-{
-	if(this.hasAttribute("type"))
-	{
-		this.__type =  this.getAttribute("type");
-	}
-	if(this.hasAttribute("matchStartsWith"))
-	{
-		this.__matchStartsWith =  Boolean.parse(this.getAttribute("matchStartsWith"));
-	}
-	if(this.hasAttribute("maxChars"))
-	{
-		this.__maxChars =  parseInt(this.getAttribute("maxChars"));
-	}
-	if(this.hasAttribute("minChars"))
-	{
-		this.__minChars =  parseInt(this.getAttribute("minChars"));
-	}
-	if(this.hasAttribute("minSearchStartChars"))
-	{
-		this.__minSearchStartChars =  parseInt(this.getAttribute("minSearchStartChars"));
-	}
-	if(this.hasAttribute("caseSensitive"))
-	{
-		this.__caseSensitive = Boolean.parse(this.getAttribute("caseSensitive"));
-	}
-	if(this.hasAttribute("required"))
-	{
-		this.__required = Boolean.parse(this.getAttribute("required"));
-	}
-	if(this.hasAttribute("placeholder"))
-	{
-		this.__placeholder = this.getAttribute("placeholder");
-	}
-	if(this.hasAttribute("displayAsPassword"))
-	{
-		this.__displayAsPassword = Boolean.parse(this.getAttribute("displayAsPassword"));
-	}
-	if(this.hasAttribute("delay"))
-	{
-		this.__delay =  parseInt(this.getAttribute("delay"));
-	}
-	if(this.hasAttribute("maxListHeight"))
-	{
-		this.__maxListHeight =  parseInt(this.getAttribute("maxListHeight"));
-	}
-	if(this.hasAttribute("listWidth"))
-	{
-		this.__listWidth =  parseInt(this.getAttribute("listWidth"));
-	}
-	if(this.hasAttribute("labelField"))
-	{
-		this.__labelField = this.getAttribute("labelField");
-	}
-	if(this.hasAttribute("labelFunction"))
-	{
-		this.__labelFunction = this.getAttribute("labelFunction");
-	}
-	if(this.hasAttribute("template"))
-	{
-		this.__templateID = this.getAttribute("template");
-	}
-	if(this.hasAttribute("setDataCallBack"))
-	{
-		this.__setDataCallBack = this.getAttribute("setDataCallBack");
-	}
-	if(this.hasAttribute("clearDataCallBack"))
-	{
-		this.__clearDataCallBack  = this.getAttribute("clearDataCallBack");
-	}
-	if(this.hasAttribute("enableMultipleSelection"))
-	{
-		this.__enableMultipleSelection =  Boolean.parse(this.getAttribute("enableMultipleSelection"));
-	}
-	if(this.hasAttribute("customScrollerRequired"))
-	{
-		this.__customScrollerRequired =  Boolean.parse(this.getAttribute("customScrollerRequired"));
-	}
-	if(this.hasAttribute("enableKeyboardNavigation"))
-	{
-		this.__enableKeyboardNavigation =  Boolean.parse(this.getAttribute("enableKeyboardNavigation"));
-	}
-	if(this.hasAttribute("noRecordsFoundMessage"))
-	{
-		this.__noRecordsFoundMessage =  this.getAttribute("noRecordsFoundMessage");
-	}
-	if(this.hasAttribute("multiSelectionSeparator"))
-	{
-		this.__multiSelectionSeparator =  this.getAttribute("multiSelectionSeparator");
-	}
-	if(this.hasAttribute("pattern"))
-	{
-		this.__pattern =  this.getAttribute("pattern");
-	}
-	if(this.hasAttribute("restrict"))
-	{
-		this.__restrict =  this.getAttribute("restrict");
-		if(this.__restrict)
-		{
-			this.__restrict = "[" + this.__restrict + "]";
-		}
-	}
-	this.__createComponents();
-	this.__setTextBoxProperty();
-	this.__coreElement = this.__textBox;
-	this.base.setComponentProperties();
-};
-
-nsTextBox.propertyChange = function(attrName, oldVal, newVal, setProperty)
-{
-	var callTextProperty = false;
-	var attributeName = attrName.toLowerCase();
-	if(attributeName === "matchStartsWith")
-	{
-		this.__matchStartsWith =  Boolean.parse(this.getAttribute("matchStartsWith"));
-	}
-	if(attributeName === "maxChars")
-	{
-		this.__maxChars =  parseInt(this.getAttribute("maxChars"));
-		callTextProperty = true;
-	}
-	if(attributeName === "minChars")
-	{
-		this.__minChars =  parseInt(this.getAttribute("minChars"));
-	}
-	if(attributeName === "minSearchStartChars")
-	{
-		this.__minSearchStartChars =  parseInt(this.getAttribute("minSearchStartChars"));
-	}
-	if(attributeName === "caseSensitive")
-	{
-		this.__caseSensitive = Boolean.parse(this.getAttribute("caseSensitive"));
-	}
-	if(attributeName === "required")
-	{
-		this.__required = Boolean.parse(this.getAttribute("required"));
-		callTextProperty = true;
-	}
-	if(attributeName === "placeholder")
-	{
-		this.__placeholder = this.getAttribute("placeholder");
-		callTextProperty = true;
-	}
-	if(attributeName === "delay")
-	{
-		this.__delay =  parseInt(this.getAttribute("delay"));
-	}
-	if(attributeName === "maxListHeight")
-	{
-		this.__maxListHeight =  parseInt(this.getAttribute("maxListHeight"));
-	}
-	if(attributeName === "listWidth")
-	{
-		this.__listWidth =  parseInt(this.getAttribute("listWidth"));
-	}
-	if(attributeName === "labelField")
-	{
-		this.__labelField = this.getAttribute("labelField");
-	}
-	if(attributeName === "labelFunction")
-	{
-		this.__labelFunction = this.getAttribute("labelFunction");
-	}
-	if(attributeName === "enableMultipleSelection")
-	{
-		this.__enableMultipleSelection =  Boolean.parse(this.getAttribute("enableMultipleSelection"));
-	}
-	if(attributeName === "enableKeyboardNavigation")
-	{
-		this.__enableKeyboardNavigation =  Boolean.parse(this.getAttribute("enableKeyboardNavigation"));
-	}
-	if(attributeName === "noRecordsFoundMessage")
-	{
-		this.__noRecordsFoundMessage =  this.getAttribute("noRecordsFoundMessage");
-	}
-	if(attributeName === "multiSelectionSeparator")
-	{
-		this.__multiSelectionSeparator =  this.getAttribute("multiSelectionSeparator");
-	}
-	if(attributeName === "pattern")
-	{
-		this.__pattern =  this.getAttribute("pattern");
-		callTextProperty = true;
-	}
-	if(attributeName === "restrict")
-	{
-		this.__restrict =  this.getAttribute("restrict");
-		if(this.util.isValueNull(this.__restrict))
-		{
-			this.__restrict = null;
-		}
-		else
-		{
-			this.__restrict = "[" + this.__restrict + "]";
-		}
-		callTextProperty = true;
-	}
-	if(callTextProperty)
-	{
-		this.__setTextBoxProperty();
-	}
-	this.base.propertyChange(attrName, oldVal, newVal, setProperty);
-};
-
-nsTextBox.removeComponent = function() 
-{
-	if(this.__documentClickRef)
-	{
-		this.util.removeEvent(document,"click",this.__documentClickRef);
-		this.__documentClickRef = null;
-	}
-	if(this.__documentKeyUpRef)
-	{
-		this.util.removeEvent(document.body,"keyup",this.__documentKeyUpRef);
-		this.__documentKeyUpRef = null;
-	}
-};
-
-nsTextBox.setDataProvider = function(dataProvider)
-{
-	this.__dataProvider = dataProvider;
-	if(this.__enableAutoComplete && this.__dataProvider && this.__dataProvider.length > 0 && this.__isCreationCompleted)
-	{
-		this.__renderer = new this.defaultSearchRenderer();
-		this.__renderer.parentControl = this;
-		this.__itemRenderer = this.__renderer.getRenderer();
-		var rect = this.getBoundingClientRect();
-		this.__componentMeasurement.top = rect.top + this.__textBox.offsetHeight + 5;
-		this.__componentMeasurement.left = rect.left;
-		this.__componentMeasurement.width = this.__textBox.offsetWidth;
-		if(!this.__keyUpRef)
-		{
-			this.__keyUpRef = this.__keyUpHandler.bind(this);
-			this.util.addEvent(this.__textBox,"keyup",this.__keyUpRef);
-		}
-		if(this.__enableAutoComplete)
-		{
-			if(!this.__documentClickRef)
-			{
-				this.__documentClickRef = this.__documentClickHandler.bind(this);
-				this.util.addEvent(document,"click",this.__documentClickRef);
-			}
-			if(!this.__documentKeyUpRef)
-			{
-				this.__documentKeyUpRef = this.__documentKeyUpHandler.bind(this);
-				this.util.addEvent(document.body,"keyup",this.__documentKeyUpRef);
-			}
-		}
-	}
-};
-
-nsTextBox.__createComponents = function() 
-{
-	if(!this.__outerContainer)
-	{
-		this.__applyTipToCoreComp = true;
-		this.__outerContainer = this.util.createDiv(this.getID() + "#container","nsTextBoxContainer");
-		this.addChild(this.__outerContainer);
-		this.__textBox = document.createElement("INPUT");
-		var preferredWidth = this.util.getDimensionAsNumber(this,this.style.width);
-		if(preferredWidth > 0)
-		{
-			this.__outerContainer.style.width = preferredWidth + "px";
-		}
-		this.__textBox.setAttribute("type", this.__getType());
-		if(!this.__textBoxFocusOutRef)
-		{
-			this.__textBoxFocusOutRef = this.__textBoxFocusOutHandler.bind(this);
-			this.util.addEvent(this.__textBox,"blur",this.__textBoxFocusOutRef);
-		}
-		if(!this.__focusInRef)
-		{
-			this.__focusInRef = this.__focusInHandler.bind(this);
-			this.util.addEvent(this.__textBox,"focusin",this.__focusInRef);
-		}
-		this.__outerContainer.appendChild(this.__textBox);
-	}
-};
-
-nsTextBox.__getType = function()
-{
-	var textBoxType = "text";
-	if(this.__type)
-	{
-		if(this.__type ===  this.TYPE_AUTOCOMPLETE)
-		{
-			textBoxType = "text";
-			this.__enableAutoComplete = true;
-		}
-		else if(this.__displayAsPassword)
-		{
-			textBoxType = "password";
-		}
-		else if(this.__type ===  this.TYPE_AUTOTEXT || this.__type ===  this.TYPE_EMAIL || this.__type ===  this.TYPE_NUMBER || this.__type ===  this.TYPE_PASSWORD || this.__type ===  this.TYPE_URL)
-		{
-			textBoxType = this.__type;
-		}
-	}
-	return textBoxType;
-};
-
-
-nsTextBox.__setTextBoxProperty = function() 
-{
-	if(this.__textBox)
-	{
-		if(this.__required)
-		{
-			this.__textBox.setAttribute("required", "");
-		}
-		else
-		{
-			this.__textBox.removeAttribute("required");   
-		}
-		if(this.__placeholder && this.__placeholder.length > 0)
-		{
-			this.__textBox.setAttribute("placeholder", this.__placeholder);
-		}
-		else
-		{
-			this.__textBox.removeAttribute("placeholder");
-		}
-		if(this.__maxChars > -1)
-		{
-			this.__textBox.setAttribute("maxLength", this.__maxChars);
-		}
-		if(this.__pattern)
-		{
-			this.__textBox.setAttribute("pattern", this.__pattern);
-		}
-		else
-		{
-			this.__textBox.removeAttribute("pattern");
-		}
-		if(this.__restrict)
-		{
-			if(!this.__keyPressedRef)
-			{
-				this.__keyPressedRef = this.__keyPressHandler.bind(this);
-				this.util.addEvent(this.__textBox,"keypress",this.__keyPressedRef);
-			}
-			if(!this.__pasteRef)
-			{
-				this.__pasteRef = this.__pasteHandler.bind(this);
-				this.util.addEvent(this.__textBox,"paste",this.__pasteRef);
-			}
-		}
-		else
-		{
-			if(this.__keyPressedRef)
-			{
-				this.util.removeEvent(this.__textBox,"keypress",this.__keyPressedRef);
-				this.__keyPressedRef = null;
-			}
-			if(this.__pasteRef)
-			{
-				this.util.removeEvent(this.__textBox,"paste",this.__pasteRef);
-				this.__pasteRef = null;
-			}
-		}
-	}
-};
-
-nsTextBox.__documentKeyUpHandler = function(event)
-{
-	event = this.util.getEvent(event);
-	var isShiftCtrlPressed = event.shiftKey || event.ctrlKey;
-	var keyCode = this.util.getKeyUnicode(event);
-	if(this.__enableMultipleSelection && (keyCode == this.util.KEYCODE.SHIFT || keyCode == this.util.KEYCODE.CTRL))
-	{
-		this.__multiSelectHandler();
-		this.__removeListControl();
-	}
-};
-
-nsTextBox.__keyUpHandler = function(event)
-{
-	event = this.util.getEvent(event);
-	var isShiftCtrlPressed = event.shiftKey || event.ctrlKey;
-	var keyCode = this.util.getKeyUnicode(event);
-	if (keyCode == this.util.KEYCODE.ESC) 
-	{
-		this.__removeListControl();
-	}
-	else if(this.__enableMultipleSelection && (keyCode == this.util.KEYCODE.SHIFT || keyCode == this.util.KEYCODE.CTRL))
-	{
-		this.__multiSelectHandler();
-		this.__removeListControl();
-	}
-	
-	//key Up
-	/*if(keyCode === this.util.KEYCODE.UP && isShiftCtrlPressed && this.__enableMultipleSelection)
-	{
-	}
-	//key down
-	else if(keyCode === this.util.KEYCODE.DOWN && isShiftCtrlPressed && this.__enableMultipleSelection)
-	{
-	}*/
-	else if (!(keyCode == this.util.KEYCODE.UP || keyCode == this.util.KEYCODE.DOWN || keyCode == this.util.KEYCODE.ENTER || keyCode == this.util.KEYCODE.SHIFT || keyCode == this.util.KEYCODE.CTRL)) 
-	{
-		if(!this.__textBox.value || this.__textBox.value == "" || this.__textBox.value.length < this.__minSearchStartChars)
-		{
-			this.__removeListControl();
-		}
-		else
-		{
-			if(this.__timerInstance)
-			{
-				clearTimeout(this.__timerInstance);
-			}
-			var compRef = this;
-			this.__timerInstance = setTimeout(
-			function()
-			{ 
-				compRef.__searchText(compRef.__textBox.value);
-			},this.__delay);
-		}
-	}
-	else
-	{
-		event.preventDefault();
-	}
-};
-
-nsTextBox.__keyPressHandler = function(event)
-{
-	event = this.util.getEvent(event);
-	var keyCode = this.util.getKeyUnicode(event);
-	var keyPressed = String.fromCharCode(keyCode);
-	if(!this.util.checkRegexValue(this.__restrict,keyPressed))
-	{
-		event.preventDefault();
-	}
-};
-
-nsTextBox.__documentClickHandler = function(event)
-{
-	var closeList = true;
-	var target = this.util.getTarget(event);
-	if(target && target === this.__textBox)
-	{
-		closeList = false;
-	}
-	else
-	{
-		var targetList = this.util.findParent(target,"ns-list");
-		//checking nodeName as while this.__list is null after selecting an item
-		if(targetList && targetList.nodeName === "NS-LIST")
-		{
-			closeList = false;
-		}
-	}
-	if(closeList)
-	{
-		this.__removeListControl();
-	}
-};
-
-nsTextBox.__pasteHandler = function(event)
-{
-	event = this.util.getEvent(event);
-	var pastedText = undefined;
-	var text = "";
-	if (window.clipboardData && window.clipboardData.getData) 
-	{ // IE
-	    pastedText = window.clipboardData.getData("Text");
-	} 
-	else if (event.clipboardData && event.clipboardData.getData) 
-	{
-	    pastedText = event.clipboardData.getData("text/plain");
-	}
-	var pastedTextLength = pastedText.length;
-	for (var count = 0; count < pastedTextLength; count++) 
-	{
-		var char = pastedText.charAt(count);
-        if(this.util.checkRegexValue(this.__restrict,char))
-    	{
-        	text += char;
-    	}
-    }
-	this.__textBox.value += text;
-	event.preventDefault();
-};
-
-nsTextBox.__focusInHandler = function(event)
-{
-	if(this.nsTip)
-	{
-		this.nsTip.remove();
-	}
-	if(this.__enableAutoComplete)
-	{
-		if(!this.__list && this.__dataProvider && this.__dataProvider.length > 0)
-		{
-			//this.__createListControl("");
-			//this.__list.setDataProvider(this.__dataProvider);
-		}
-	}
-};
-
-nsTextBox.__textBoxFocusOutHandler = function(event)
-{
-	if(this.__minChars > -1 && this.__textBox.value && this.__textBox.value.length < this.__minChars)
-	{
-		this.__textBox.setCustomValidity("Please enter atleast " + this.__minChars  + " characters.");
-	}
-	else 
-	{
-		this.__textBox.setCustomValidity("");
-	}
-};
-
-nsTextBox.__searchText = function(searchString)
-{
-	this.__removeListControl();
-	this.__createListControl(searchString);
-	var compRef = this;
-	var dataSource = this.__dataProvider.filter(
-	function (item)
-	{
-		var compareString = searchString;
-		if(item)
-		{
-			if(compRef.__matchStartsWith)
-			{
-				return compRef.util.startsWith(item[compRef.__labelField],compareString,compRef.__caseSensitive);
-			}
-			else
-			{
-				return compRef.util.contains(item[compRef.__labelField],compareString,0,compRef.__caseSensitive);
-			}
-		}
-		return false;
-	});
-	if(dataSource.length === 0)
-	{
-		var item = {};
-		item[compRef.__labelField] = compRef.__noRecordsFoundMessage;
-		dataSource[0] = item;
-	}
-	compRef.__list.setDataProvider(dataSource);
-	var suggestedHeight = (dataSource.length * compRef.__list.__listItemHeight) + 5;
-	suggestedHeight = (compRef.__maxListHeight > suggestedHeight) ? suggestedHeight:compRef.__maxListHeight;
-	compRef.__list.style.height = suggestedHeight + "px";
-};
-
-nsTextBox.__createListControl = function(searchString)
-{
-	if(!this.__list)
-	{
-		this.__list = document.createElement("ns-list");
-		this.util.addStyleClass(this.__list,"nsTextBoxList");
-		this.__list.style.top = this.__componentMeasurement.top + "px";
-		this.__list.style.left = this.__componentMeasurement.left + "px";
-		if(this.__listWidth > 0)
-		{
-			this.__list.style.width =this.__listWidth + "px";
-		}
-		else
-		{
-			this.__list.style.width =this.__componentMeasurement.width + "px";
-		}
-		this.__list.style.height = this.__maxListHeight + "px";
-		this.__list.setAttribute("labelField",this.__labelField);
-		if(this.__templateID)
-		{
-			this.__list.setAttribute("template",this.__templateID);
-			this.__list.setAttribute("setDataCallBack",this.__setDataCallBack);
-			this.__list.setAttribute("clearDataCallBack",this.__clearDataCallBack);
-			this.__list.setAttribute("setDataParam",searchString);
-		}
-		else
-		{
-			this.__list.__itemRenderer = this.__itemRenderer;
-			this.__list.__setDataCallBack = this.__renderer.setData.bind(this.__renderer);
-			this.__list.__clearDataCallBack = this.__renderer.clearData.bind(this.__renderer);
-			this.__renderer.searchString = searchString;
-		}
-		
-		this.__list.setAttribute("resuableRenderRequired",false);
-		this.__list.setAttribute("enableMultipleSelection",this.__enableMultipleSelection);
-		this.__list.setAttribute("enableKeyboardNavigation",this.__enableKeyboardNavigation);
-		this.__list.setAttribute("customScrollerRequired",this.__customScrollerRequired);
-		this.__itemNavigationRef = this.__itemNavigationHandler.bind(this);
-		this.__itemSelectRef = this.__itemSelectHandler.bind(this);
-		this.__itemUnSelectRef = this.__itemUnSelectHandler.bind(this);
-		this.util.addEvent(this.__list,this.__list.ITEM_NAVIGATED,this.__itemNavigationRef);
-		this.util.addEvent(this.__list,this.__list.ITEM_SELECTED,this.__itemSelectRef);
-		this.util.addEvent(this.__list,this.__list.ITEM_UNSELECTED,this.__itemUnSelectRef);
-		this.__outerContainer.appendChild(this.__list);
-	}
-};
-
-nsTextBox.__removeListControl = function()
-{
-	if(this.__list)
-	{
-		this.__selectedItems = this.__list.getSelectedItems();
-		this.__outerContainer.removeChild(this.__list);
-		this.__list = null;
-	}
-};
-
-nsTextBox.__itemNavigationHandler = function(event)
-{
-	if(event && event.detail)
-	{
-		var navigatedItem = event.detail;
-		if(!this.__enableMultipleSelection)
-		{
-			this.__textBox.value = navigatedItem[this.__labelField];
-		}
-	}
-};
-
-nsTextBox.__itemSelectHandler = function(event)
-{
-	if(event && event.detail)
-	{
-		this.__selectedItem = event.detail;
-		this.__textBox.value = this.__selectedItem[this.__labelField];
-		if(!this.__enableMultipleSelection)
-		{
-			this.__removeListControl();
-			this.util.dispatchEvent(this,this.ITEM_SELECTED,event.detail,{index:event.index});
-		}
-	}
-};
-
-nsTextBox.__itemUnSelectHandler = function(event)
-{
-	if(!this.__enableMultipleSelection)
-	{
-		this.util.dispatchEvent(this,this.ITEM_UNSELECTED,event.detail,{index:event.index});
-	}
-};
-
-nsTextBox.__multiSelectHandler = function()
-{
-	if(this.__list && this.__list.getSelectedItems() && this.__list.getSelectedItems().length > 0)
-	{
-		this.__selectedItems = this.__list.getSelectedItems();
-		var setText = "";
-		for(var count = 0;count < this.__selectedItems.length;count++)
-		{
-			setText += this.__multiSelectionSeparator + this.__selectedItems[count][this.__labelField];
-		}
-		if(setText && setText.length > 0)
-		{
-			this.__textBox.value = setText.substring(1,setText.length);
-		}
-	}
-};
-
-nsTextBox.defaultSearchRenderer = function()
-{
-	this.parentControl = null;
-	this.searchString = null;
 	this.util = new NSUtil();
-	this.divItemRenderer = null;
-	
-	this.getRenderer = function()
-	{
-		if(!this.divItemRenderer)
-		{
-			this.__createComponents();
-		}
-		return this.divItemRenderer;
-	};
-	
-	this.setData = function(renderer,item,labelField)
-	{
-		if(renderer)
-		{
-			if(item && item[labelField])
-			{
-				var htmlText = item[labelField];
-				if(htmlText != this.parentControl.getNoMessage())
-				{
-					if (this.searchString) 
-					{
-					      var words = '(' +
-					      		this.searchString.split(/\ /).join(' |').split(/\(/).join('\\(').split(/\)/).join('\\)') + '|' +
-					      		this.searchString.split(/\ /).join('|').split(/\(/).join('\\(').split(/\)/).join('\\)') +
-					          ')',
-					          exp = new RegExp(words, 'gi');
-					      if (words.length) 
-					      {
-					    	  htmlText = htmlText.replace(exp, "<span class=\"nsTextHighlight\">$1</span>");
-					      }
-					}
-				}
-				renderer.rendererBody.rendererLabel.innerHTML = htmlText;
-				//renderer.rendererBody.rendererLabel.appendChild(document.createTextNode(item[labelField]));
-			}
-			else
-			{
-				this.clearData(renderer);
-			}
-		}
-		
-	};
-	
-	this.clearData = function(renderer)
-	{
-		if(renderer)
-		{
-			renderer.rendererBody.rendererLabel.innerHTML = "";
-		}
-	};
-	
-	this.__createComponents = function()
-	{
-		this.divItemRenderer = this.util.createDiv(null,"imageHolder"); 
-		this.divItemRenderer.style.height = 20 + "px";
-		this.divItemRenderer.style.padding = 4 + "px";
-		this.divItemRenderer.setAttribute("accessor-name","rendererBody"); 
-		var lblItemRenderer = document.createElement("LABEL");
-		lblItemRenderer.setAttribute("accessor-name","rendererLabel");
-		this.divItemRenderer.appendChild(lblItemRenderer);
-	};
+	this.__componentMouseOverRef = null;
+	this.__componentMouseOutRef = null;
+	this.__windowResizeRef = null;
+	this.__windowScrollRef = null;
+	this.__initialize();
 };
 
-document.registerElement("ns-textBox", {prototype: nsTextBox});
+NSPinTip.prototype.show = function(text)
+{
+	if(text)
+	{
+		this.__text = text;
+	}
+	if(this.__text || this.__templateID)
+	{
+		if(!this.__divTipContainer)
+		{
+			this.__currentPosition = this.__position;
+			this.__createTip(this.__position);
+		}
+		var objPinTip = this;
+		this.util.fadeIn(this.__divTipContainer,null,function(component)
+		{
+			objPinTip.__isVisible = false;
+		});
+		this.__addContent();
+		this.__placeTip(this.__position);
+	}
+};
+
+NSPinTip.prototype.remove = function()
+{
+	var objPinTip = this;
+	this.util.fadeOut(this.__divTipContainer,function(component)
+	{
+		if(this.__divTipContainer)
+		{
+			document.body.removeChild(objPinTip.__divTipContainer);
+			objPinTip.__divTipContainer = null;
+			objPinTip.__isVisible = false;
+		}
+	});
+};
+
+NSPinTip.prototype.hide = function()
+{
+	var objPinTip = this;
+	this.util.fadeOut(this.__divTipContainer,function(component)
+	{
+		objPinTip.__isVisible = false;
+	});
+};
+
+NSPinTip.prototype.destroyObject =  function(styleName)
+{
+	if(this.__componentMouseOverRef)
+	{
+		this.util.removeEvent(this.__component,"mouseover",this.__componentMouseOverRef);
+		this.__componentMouseOverRef = null;
+	}
+	if(this.__componentMouseOutRef)
+	{
+		this.util.removeEvent(this.__component,"mouseout",this.__componentMouseOutRef);
+		this.__componentMouseOutRef = null;
+	}
+	if(this.__windowResizeRef)
+	{
+		this.util.removeEvent(window,"resize",this.__windowResizeRef);
+		this.__windowResizeRef = null;
+	}
+	if(this.__windowScrollRef)
+	{
+		this.util.removeEvent(window,"scroll",this.__windowScrollRef);
+		this.__windowScrollRef = null;
+	}
+};
+
+NSPinTip.prototype.isVisible = function()
+{
+	return this.__isVisible;
+};
+
+NSPinTip.prototype.__initialize = function(properties)
+{
+	
+	if(!this.__position)
+	{
+		this.__position = this.POS_BOTTOM;
+	}
+	if(!this.__size)
+	{
+		this.__size = this.SIZE_MEDIUM;
+	}
+	this.__position = this.__position.toLowerCase();
+	this.__size = this.__size.toLowerCase();
+	if(Boolean.parse(this.__showOnMouseHover))
+	{
+		this.__componentMouseOverRef = this.__componentMouseOverHandler.bind(this);
+		this.__componentMouseOutRef = this.__componentMouseOutHandler.bind(this);
+		this.util.addEvent(this.__component,"mouseover",this.__componentMouseOverRef);
+		this.util.addEvent(this.__component,"mouseout",this.__componentMouseOutRef);
+	}
+	this.__windowResizeRef = this.__windowScrollResizeHandler.bind(this);
+	this.__windowScrollRef = this.__windowScrollResizeHandler.bind(this);
+	this.util.addEvent(window,"resize",this.__windowResizeRef);
+	this.util.addEvent(window,"scroll",this.__windowScrollRef);
+};
+
+NSPinTip.prototype.__createTip = function(position)
+{
+	if(!this.__divTipContainer)
+	{
+		this.__divTipContainer = this.util.createDiv(this.__getID() + "#nsTipContainer",null);
+		this.__setTipStyle(position);
+		document.body.appendChild(this.__divTipContainer);
+		this.__divTipArrow = this.util.createDiv(this.__getID() + "#nsTipArrow", this.__getStyleName("arrow"));
+		this.__divTipContainer.appendChild(this.__divTipArrow);
+		this.__divTip = this.util.createDiv(this.__getID() + "#nsTip",this.__getStyleName("content"));
+		this.__divTipContainer.appendChild(this.__divTip);
+		this.__applyExtraStyle();
+	}
+};
+
+NSPinTip.prototype.__placeTip = function(position)
+{
+	var offset = this.__getOffset(position);
+	var newPosition = this.__getSuggestedPosition(position, offset);
+	if (newPosition && newPosition !== position) 
+	{
+		position = newPosition;
+		offset = this.__getOffset(position);
+	}
+	this.__currentPosition = position;
+	this.__setTipStyle(position);
+	this.__divTipContainer.style.top = offset.top + "px";
+	this.__divTipContainer.style.left = offset.left + "px";
+};
+
+NSPinTip.prototype.__addContent = function()
+{
+	this.util.removeAllChildren(this.__divTip);
+	if(this.__templateID)
+	{
+		if(!this.__itemRenderer)
+		{
+			this.__itemRenderer = this.util.getTemplate(this.__templateID);
+		}
+		if(this.__itemRenderer)
+		{
+			this.__divTip.appendChild(this.__itemRenderer.cloneNode(true));
+		}
+	}
+	if(this.__divTip.childNodes.length === 0 && this.__text && this.util.isString(this.__text))
+	{
+		this.__divTip.appendChild(document.createTextNode(this.__text));
+	}
+};
+
+NSPinTip.prototype.__applyExtraStyle = function()
+{
+	if(this.__extraStyle && this.util.isString(this.__extraStyle) && this.__extraStyle != "")
+	{
+		var arrStyles = this.__extraStyle.split(";");
+		for(var count = 0; count < arrStyles.length;count++)
+		{
+			var arrStyle =  arrStyles[count].split(":");
+			if(arrStyle && arrStyle.length === 2)
+			{
+				var styleProp = this.util.convertCSSPropToJS(arrStyle[0]);
+				var styleValue = arrStyle[1];
+				if(styleProp === "backgroundColor")
+				{
+					var propPos = null;
+					if(this.__currentPosition.indexOf(this.POS_TOP) > -1)
+					{
+						propPos = this.POS_TOP;
+					}
+					else if(this.__currentPosition.indexOf(this.POS_BOTTOM) > -1)
+					{
+						propPos = this.POS_BOTTOM;
+					}
+					else if(this.__currentPosition.indexOf(this.POS_LEFT) > -1)
+					{
+						propPos = this.POS_LEFT;
+					}
+					else if(this.__currentPosition.indexOf(this.POS_RIGHT) > -1)
+					{
+						propPos = this.POS_RIGHT;
+					}
+					if(propPos)
+					{
+						propPos = propPos[0].toUpperCase() + propPos.slice(1);
+					}
+					this.__divTipArrow.style["border" + propPos + "Color"] = styleValue;
+				}
+				this.__divTip.style[styleProp] = styleValue;
+			}
+		}
+	}
+};
+
+NSPinTip.prototype.__getOffset = function(position)
+{
+	  var pad = 15;
+	  var rectTip = this.__divTipContainer.getBoundingClientRect();
+	  var rectComponent = this.__component.getBoundingClientRect();
+	  var item = {top: 0,left:0};
+	  if(rectTip && rectComponent)
+	  {
+		  var tipWidth = rectTip.width;
+		  var tipHeight = rectTip.height;
+		  var componentWidth = rectComponent.width;
+		  var componentHeight = rectComponent.height;
+		  var componentOffset = this.util.getOffSetForElementRectangle(rectComponent);
+		  switch(position) 
+		  {
+			case this.POS_TOP:
+				item.top = componentOffset.top - tipHeight;
+				item.left = componentOffset.left + componentWidth / 2 - tipWidth / 2;
+				break;
+			case this.POS_BOTTOM:
+				item.top = componentOffset.top + componentHeight;
+				item.left = componentOffset.left + componentWidth / 2 - tipWidth / 2;
+				break;
+			case this.POS_LEFT:
+				item.top =  componentOffset.top + componentHeight / 2 - tipHeight / 2;
+				item.left = componentOffset.left - tipWidth;
+				break;
+			case this.POS_RIGHT:
+				item.top =  componentOffset.top + componentHeight / 2 - tipHeight / 2,
+				item.left = componentOffset.left + componentWidth;
+				break;
+			case this.POS_TOPLEFT:
+				item.top =  componentOffset.top - tipHeight;
+				item.left = componentOffset.left + componentWidth / 2 - tipWidth + pad;
+				break;
+			case this.POS_TOPRIGHT:
+				item.top =  componentOffset.top - tipHeight;
+				item.left = componentOffset.left + componentWidth / 2 - pad;
+				break;
+			case this.POS_BOTTOMLEFT:
+				item.top =  componentOffset.top + componentHeight;
+				item.left = componentOffset.left + componentWidth / 2 - tipWidth + pad;
+				break;
+			case this.POS_BOTTOMRIGHT:
+				item.top =  componentOffset.top + componentHeight;
+				item.left = componentOffset.left + componentWidth / 2 - pad;
+				break;
+		  }
+	  }
+	  return item;
+};
+
+NSPinTip.prototype.__getSuggestedPosition = function(position,offset)
+{
+	  var tipWidth = this.__divTipContainer.clientWidth;
+	  var tipHeight = this.__divTipContainer.clientHeight;
+	  var top = window.scrollY;
+	  var left = window.scrollX;
+	  var totalWidth = window.innerWidth;
+	  var totalHeight = window.innerHeight;
+	
+	  var objPosition = {};
+	  objPosition[this.POS_TOP] = true;
+	  objPosition[this.POS_BOTTOM] = true;
+	  objPosition[this.POS_LEFT] = true;
+	  objPosition[this.POS_RIGHT] = true;
+	  
+	  if (offset.top < top) 
+	  {
+		  objPosition[this.POS_TOP] = false;
+	  }
+	  if (offset.top + tipHeight > top + totalHeight) 
+	  {
+		  objPosition[this.POS_BOTTOM] = false;
+	  }
+	  if (offset.left < left)
+	  {
+		  objPosition[this.POS_LEFT] = false;
+	  }
+	  if (offset.left + tipWidth > left + totalWidth) 
+	  {
+		  objPosition[this.POS_RIGHT] = false;
+	  }
+	
+	  var positions = position.split("-");
+	  //below loop tries to give favourable position like bottom-right so if position has bottom and right both true it returns that position
+	  for (var count = 0; count < positions.length; count++) 
+	  {
+		if (!objPosition[positions[count]]) 
+		{
+			break;
+		}
+		if (count === positions.length - 1) 
+		{
+		  return position;
+		}
+	  }
+	  //below loop tries to give one favourable position like in bottom-right if bottom is true or right is true it gets returned
+	  for (var count = 0; count < positions.length; count++) 
+	  {
+		if (objPosition[positions[count]]) 
+		{
+			return positions[count];
+		}
+	  }
+	  if (objPosition[position]) 
+	  {
+		  return position;
+	  }
+	  for(var tmpPosition in objPosition)
+	  {
+		  if (objPosition[tmpPosition]) 
+		  {
+			  return tmpPosition;
+		  }
+	  }
+};
+
+NSPinTip.prototype.__componentMouseOverHandler = function(event)
+{
+	 this.show(this.__text);
+};
+
+NSPinTip.prototype.__componentMouseOutHandler = function(event)
+{
+	this.remove();
+};
+
+NSPinTip.prototype.__windowScrollResizeHandler = function(event)
+{
+	console.log("In __windowScrollResizeHandler");
+	 this.show(this.__text);
+};
+
+NSPinTip.prototype.__setTipStyle = function(position)
+{
+	var classname = this.__styleSuffix;
+	var posStyle = this.__getStyleName(position.toLowerCase());
+	if(!posStyle)
+	{
+		posStyle = this.__getStyleName("top");
+	}
+	classname += " " + posStyle;
+	if(!this.__size)
+	{
+		this.__size = "medium";
+	}
+	classname += " " + this.__getStyleName(this.__size);
+	this.__divTipContainer.setAttribute("class", classname);
+};
+
+NSPinTip.prototype.__getStyleName =  function(styleName)
+{
+	return this.__styleSuffix + "-" + styleName;
+};
+
+NSPinTip.prototype.__getID = function()
+{
+	if(!this.__id)
+	{
+		if(this.__component.hasAttribute("id"))
+		{
+			this.__id = this.__component.getAttribute("id");
+		}
+		else if(this.__component.hasAttribute("name"))
+		{
+			this.__id = this.__component.getAttribute("name");
+		}
+		else
+		{
+			this.__id = "comp" + this.util.getUniqueId();
+		}
+	}
+	
+	return this.__id;
+};
