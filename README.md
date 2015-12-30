@@ -63,3 +63,6 @@
 	-o-transition: all 0.25s ease-in-out;
 	transition: all 0.25s ease-in-out;
 }
+
+<ns-panel id="divDemo" nsTitle="Demo" template="templateDemo" minWidth="100" minHeight="100" enableCollapse="true" enableDrag="true" enableResize="true">
+	</ns-panel>
