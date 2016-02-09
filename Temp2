@@ -1,219 +1,27 @@
-"use strict"; 
-function NSFlatGrid(nsGrid,nsUtil) 
-{
-	this.__INFINITE_SCROLL_PADDING = 40;
-	this.__INFINITE_SCROLL_INITIAL_LOAD = 250;
-	
-	this.__nsGrid = nsGrid;
-	this.util = nsUtil;
-	
-	this.__isPaginationTypeScroll = true;
-	this.__isPaginationModeAuto = true;
-	this.__bodyScrollPos = 0;
-	//for Page type Pagination
-	this.__nsPagination = null;
-}
-/********************************Common Functions for Grid ****************************************/
-NSFlatGrid.prototype.__initialize = function ()
-{
-	this.__setPaginationType();
-	this.__setPaginationMode();
-};
-
-NSFlatGrid.prototype.propertyChange = function(attrName, oldVal, newVal, setProperty) 
-{
-	var attributeName = attrName.toLowerCase();
-	if(attributeName === "pageSize" && parseInt(this.__nsGrid.getAttribute("pageSize")) > 0)
+Line 2520:
+if(this.__enableHierarchical || this.__enableGrouping)
+	   	  {
+	   		  this.__sortHierarchicalStructure(this.__arrWrapper,columnDetail,sortAscending); 
+	   		  this.__objGrid.__setWrapperSource(this.__arrWrapper,0,-1,0);
+	   		  this.__arrInternalSource = this.__arrFlatHierarchicalSource.slice(0);
+	   	  }
+	   	  else
+	   	  {
+	   		 this.__sortArrOfObjectsByParam(this.__arrWrapper,columnDetail.sortFunction,columnDetail.dataField,sortAscending);
+	   		 this.__arrInternalSource = this.__arrWrapper.slice(0);
+	   	  }
+	      this.__renderBody(true);
+	      
+Line 2774:
+	   	 if(isHierarchical)
+	   	 {
+	   		this.__objGrid.__setWrapperSource(this.__arrInternalSource,0,-1,0);
+	   		this.__arrInternalSource = this.__arrFlatHierarchicalSource.slice(0); 
+	   	 }
+Line 2982:
+	if(!this.__enableVirtualScroll && this.__getTotalRows() <= this.__totalRecords)
 	{
-		this.__nsGrid.__pageSize = parseInt(this.__nsGrid.getAttribute("pageSize"));
-		this.__nsGrid.dataSource(this.__nsGrid.__dataSource);
+		this.util.warning("nsGrid","Please let all the rows to render.");
+		return;
 	}
-};
 
-NSFlatGrid.prototype.dataSource = function(source)
-{
-	this.__nsGrid.__arrWrapper = this.__nsGrid.__dataSource.slice(0);
-	this.__setWrapperSource(this.__nsGrid.__arrWrapper,0);
-	if(this.__nsGrid.__enablePagination && this.__isPaginationModeAuto)
-	{
-		this.__nsGrid.__updateTotalRecords(this.__nsGrid.__arrWrapper.length);
-		if(this.__isPaginationTypeScroll)
-		{
-			this.__nsGrid.__arrInternalSource = this.__nsGrid.__arrWrapper.slice(0,this.__INFINITE_SCROLL_INITIAL_LOAD);
-			this.__nsGrid.__fetchRecordCallBack = this.__addRowsforScrollPagination.bind(this);
-		}
-		else 
-		{
-			this.__nsGrid.__arrInternalSource = this.__nsGrid.__arrWrapper.slice(0,this.__nsGrid.__pageSize);
-			this.__createPaginationControl(this.__nsGrid.__divOuterContainer);
-			this.__nsGrid.__fetchRecordCallBack = this.__addRowsforPagePagination.bind(this);
-		}
-	}
-	else
-	{
-		this.__nsGrid.__arrInternalSource = this.__nsGrid.__arrWrapper.slice(0);
-		this.__nsGrid.__updateTotalRecords();
-	}
-};
-
-NSFlatGrid.prototype.__createBody = function()
-{
-	if(this.__nsGrid.__enablePagination && this.__isPaginationTypeScroll)
-	{
-		this.util.addEvent(this.__nsGrid.__divBodyContainer,"scroll",this.__bodyScrollHandler.bind(this));
-	}
-};
-
-NSFlatGrid.prototype.__createBodyBody= function(dataSet,startIndex,endIndex)
-{
-    if(dataSet && dataSet.length > 0)
-    {
-    	 for (var rowIndex = startIndex; rowIndex < endIndex; rowIndex++)
-	     {
-    		var item = dataSet[rowIndex];
-    		var row = item[this.__nsGrid.__fieldRowHtml];
-    		this.__nsGrid.__tblBodyBody.appendChild(row);
-	     }
-    }
-};
-
-NSFlatGrid.prototype.__checkForAdditionalColumns = function()
-{
-};
-
-NSFlatGrid.prototype.__addSVGInPage = function(objSVG)
-{
-};
-
-NSFlatGrid.prototype.__setMeasurement = function()
-{
-	this.__bodyScrollPos = 0;
-};
-
-NSFlatGrid.prototype.__setWrapperSource = function(source,offset)
-{
-	if(source)
-	{
-		if(!offset)
-		{
-			offset = 0;
-		}
-		var length = source.length;
-		for (var count = 0; count < length; count++) 
-		{
-			var item = source[count];
-			var row = document.createElement("TR");
-			var index = count + offset;
-			row.setAttribute("index",index);
-			item[this.__nsGrid.__fieldIndex] = index;
-			item[this.__nsGrid.__fieldRowHtml] = row;
-			this.__nsGrid.__setBodyRowProperty(row,item,index);
-			var colLength = this.__nsGrid.__columns.length;
-			for (var colIndex = 0; colIndex < colLength; colIndex++)
-	        {
-	        	var colItem = this.__nsGrid.__columns[colIndex];
-	        	var cell =  row.insertCell(-1);
-	        	this.util.addStyleClass(cell , "nsDataGridCell");
-	            var cellDiv = this.util.createDiv(null);
-	            this.util.addStyleClass(cellDiv,this.__nsGrid.__CLASS_CELL_CHILD);
-	            this.__nsGrid.__addCellText(row,item,cellDiv,colItem,colIndex);
-	            cell.appendChild(cellDiv);
-	        }
-		}
-	}
-};
-/********************************Common Functions for Grid ****************************************/
-
-NSFlatGrid.prototype.__setPaginationType = function()
-{
-	if(!this.__nsGrid.__paginationType || this.__nsGrid.__paginationType === this.__nsGrid.PAGINATION_TYPE_SCROLL)
-	{
-		this.__isPaginationTypeScroll = true;
-	}
-	else
-	{
-		this.__isPaginationTypeScroll = false;
-	}
-};
-
-NSFlatGrid.prototype.__setPaginationMode = function()
-{
-	if(!this.__nsGrid.__paginationMode || this.__nsGrid.__paginationMode === this.__nsGrid.PAGINATION_MODE_AUTO)
-	{
-		this.__isPaginationModeAuto = true;
-	}
-	else
-	{
-		this.__isPaginationModeAuto = false;
-	}
-};
-
-NSFlatGrid.prototype.__createPaginationControl= function(parentElement)
-{
-	if(parentElement)
-	{
-		var divPagination = this.util.createDiv(this.__nsGrid.getID() + this.__nsGrid.__PAGINATION_CONTROL_ID,"center");
-		parentElement.appendChild(divPagination);
-		var setting = {
-				parent:divPagination,
-				totalRecords : this.__nsGrid.__totalRecords,
-				pageSize : this.__nsGrid.__pageSize,
-				//containerStyle:"pagination",
-				//activeStyle:"active",
-				//disabledStyle:"disabled",
-				textFirst:"Home",
-				textLast:"Last",
-				textPrev:"Prev",
-				textNext:"Next",
-				showFirstLast:true
-		};
-		this.__nsPagination = new NSPagination(setting);
-		this.util.addEvent(divPagination,this.__nsPagination.PAGE_CHANGE,this.__pageChangeHandler.bind(this));
-	}
-};
-
-NSFlatGrid.prototype.__pageChangeHandler= function(event)
-{
-	if(!event)
-	{
-		event = {oldIndex:0,newIndex:1,fromRecord:0,toRecord:this.__nsGrid.__pageSize - 1};
-	}
-	console.log("OldPage::" + event.oldIndex + ",NewPage::" + event.newIndex);
-	if(this.__nsGrid.__fetchRecordCallBack && this.__nsGrid.__totalRecords > event.fromRecord)
-	{
-		this.__nsGrid.__fetchRecordCallBack(event.fromRecord,event.toRecord,this.__nsGrid.__pageSize);
-	}
-};
-
-NSFlatGrid.prototype.__bodyScrollHandler = function(event)
-{
-	var target = this.util.getTarget(event);
-	var scrollPos = target.scrollTop;
-	var bodyMeasuredScroll = this.__nsGrid.__divBodyContainer.scrollHeight - this.__nsGrid.__divBodyContainer.clientHeight;
-	if(((bodyMeasuredScroll - this.__INFINITE_SCROLL_PADDING) <= scrollPos) && (scrollPos > this.__bodyScrollPos))
-	{
-		if(this.__nsGrid.__fetchRecordCallBack && this.__nsGrid.__totalRecords > this.__nsGrid.__arrInternalSource.length)
-		{
-			var fromRecord =  this.__nsGrid.__arrInternalSource.length - 1;
-			var toRecord = fromRecord +  this.__nsGrid.__pageSize - 1;
-			toRecord = (toRecord < this.__nsGrid.__totalRecords) ? toRecord : ((toRecord === this.__nsGrid.__totalRecords) ? this.__nsGrid.__totalRecords - 1 : this.__nsGrid.__totalRecords);
-			this.__nsGrid.__fetchRecordCallBack(fromRecord,toRecord,this.__nsGrid.__pageSize);
-		}
-	}
-	this.__bodyScrollPos = target.scrollTop;
-};
-
-NSFlatGrid.prototype.__addRowsforScrollPagination = function(fromRecord,toRecord,pageSize)
-{
-	console.log("In __addRowsforScrollPagination " + fromRecord + "," + toRecord + "," + pageSize);
-	var arrArray = this.__nsGrid.__arrWrapper.slice(fromRecord,toRecord + 1); 
-	this.__nsGrid.__addRemoveRowCallInternal = true;
-	this.__nsGrid.addRows(arrArray);
-};
-
-NSFlatGrid.prototype.__addRowsforPagePagination = function(fromRecord,toRecord,pageSize)
-{
-	//slice returns index range from fromRecord to toRecord - 1 hence adding 1 
-	this.__nsGrid.__arrInternalSource = this.__nsGrid.__arrWrapper.slice(fromRecord,toRecord + 1);
-	this.__nsGrid.__resetDataInBody(fromRecord,toRecord,true);
-};
