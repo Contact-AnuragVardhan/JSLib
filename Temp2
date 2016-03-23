@@ -1,5 +1,124 @@
-this.__fieldCellText = this.getID() + "cell_text";
+nsGrid.getRowInfo = function(row)
+{
+	if(row)
+	{
+		var objInfo = {};
+		objInfo.rowIndex = parseInt(row.getAttribute("ns-index"));
+		objInfo.rowLevel = parseInt(row.getAttribute("ns-level"));
+		objInfo.rowParentIndex = parseInt(row.getAttribute("ns-parent-index"));
+		return objInfo;
+	}
+	return null;
+};
 
-	this.__renderInHTMLMode = false;
-	
-this.__objGrid.__updateCellText(row,cell,item,colItem,rowIndex,colIndex);
+nsGrid.cascadeValues = function(event,callBack)
+{
+	if(this.__enableGrouping)
+	{
+		var control = this.util.getTarget(event);
+		var cell = this.util.findParent(control,"TD");
+		var objCellInfo = this.getCellInfo(cell);
+		var row = objCellInfo.row;
+		var cellIndex = objCellInfo.cellIndex;
+		var colItem = this.__columns[cellIndex];
+		var dataField = colItem.dataField;
+		var cascadeValue = this.util.getControlValue(control);
+		var flatSource = this.__objGrid.__getFlatSource();
+		for(var count = objCellInfo.rowIndex;count < flatSource.length;count ++)
+		{
+			var item = flatSource[count];
+			var childRow = item[this.__fieldRow];
+			if(item[this.__fieldRowLevel] !== objCellInfo.rowLevel)
+			{
+				var isSuccess = false;
+				var setValue = null;
+				var childCell = childRow.cells[cellIndex];
+				if(childCell.getElementsByTagName(control.tagName).length > 0)
+				{
+					var childControl = childCell.getElementsByTagName(control.tagName)[0];
+					if(childControl)
+					{
+						if(callBack)
+						{
+							setValue = callBack(control,childControl,item,dataField,cellIndex,colItem,childCell,row);
+							isSuccess = true;
+						}
+						else
+						{
+							setValue = this.util.setControlValue(childControl,cascadeValue);
+							isSuccess = true;
+						}
+					}
+				}
+				if(isSuccess)
+				{
+					item[dataField] = setValue;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+};
+
+NSUtil.prototype.getControlValue = function(control)
+{
+	if(control)
+	{
+		 if(control.tagName == "INPUT") 
+		 {
+            if(control.type == "text") 
+            {
+            	return control.value;
+            }
+            if(control.type == "checkbox") 
+            {
+            	return control.checked;
+            }
+            if(control.type == "radio") 
+            {
+            	return control.checked;
+            }
+         }  
+         if(control.tagName == "SELECT") 
+         {
+        	 return control.value;
+         }
+	}
+	return null;
+};
+
+NSUtil.prototype.setControlValue = function(control,value)
+{
+	var retValue = null;
+	if(control)
+	{
+		 if(control.tagName == "INPUT") 
+		 {
+            if(control.type == "text") 
+            {
+            	retValue = value;
+            	control.value = value;
+            }
+            if(control.type == "checkbox") 
+            {
+            	retValue = Boolean.parse(value);
+            	control.checked = retValue;
+            }
+            if(control.type == "radio") 
+            {
+            	retValue = Boolean.parse(value);
+            	control.checked = retValue;
+            }
+         }  
+         if(control.tagName == "SELECT") 
+         {
+        	 retValue = value;
+        	 control.value = value;
+         }
+	}
+	return retValue;
+};
+
