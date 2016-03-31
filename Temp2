@@ -1,18 +1,410 @@
-221: NSUtil.prototype.isElementOfType = function (element,tagName)
+var NSGridColumnMove = function(nsGrid)
 {
-	if(element && tagName)
-    {
-        if(element.tagName && element.tagName.toLowerCase() === tagName.toLowerCase())
-        {
-        	return true;
-        }
-    }
-	return false;
-};
-3069: img.setAttribute("src",source);
-			if(toolTip)
+	this.__MIN_DRAG_OFFSET = 100;
+	
+	this.__nsGrid = nsGrid;
+	this.util = nsGrid.util;
+	
+	this.__objColumnDrag = null;
+	this.__lastDragEvent = null;
+	this.__lastDragInfo = null;
+	this.__isColumnDragged = false;
+	this.__scrollLeft = false;
+    this.__scrollRight = false;
+	this.__dragColumnMoveRef = null;
+	this.__dragColumnEndRef = null;
+	this.__scrollInterval = null;
+	this.__animationSteps = null;
+	this.__moveAttempts = 0;
+	this.__scrollableContainer = null;
+	
+	this.handle = function(event,target)
+	{
+		this.__scrollableContainer = this.__getScrollableContainer();
+		this.__startColumnMove(event,target);
+	};
+	
+	this.__startColumnMove = function(event,target)
+	{
+		if(this.__nsGrid.__onGridLine)
+		{
+			return;
+		}
+		var objColumn = this.__nsGrid.__getColumnObject(target.getAttribute("currentColumnIndex"));
+		var columnIndex = this.__nsGrid.__getColumnIndexByObject(objColumn);
+		if(columnIndex > -1)
+		{
+			this.__lastDragEvent = event;
+			this.__isColumnDragged = true;
+			this.__objColumnDrag = {};
+			this.__objColumnDrag.source = target;
+			this.__objColumnDrag.objColumn = objColumn;
+			this.__objColumnDrag.columnIndex = columnIndex;
+			var position = this.util.getEventPosition(event,this.__nsGrid.__divCenterTableHeaderContainer);
+			this.__objColumnDrag.dragElement = this.__createCopyItem(target,position);
+			this.__objColumnDrag.dragElementAdded = false;
+			this.__objColumnDrag.position = position;
+			this.__dragColumnMoveRef = this.__dragColumnMoveHandler.bind(this);
+			this.__dragColumnEndRef = this.__dragColumnEndHandler.bind(this);
+			this.util.addEvent(document,"mousemove",this.__dragColumnMoveRef);
+			this.util.addEvent(document,"mouseup",this.__dragColumnEndRef);
+		}
+	};
+
+	this.__dragColumnMoveHandler = function(event)
+	{
+		event = this.util.getEvent(event);
+		var direction = this.__getDragDirection(event);
+		this.__lastDragEvent = event;
+		
+		var position = this.util.getEventPosition(event);
+		var leftOffset = this.__objColumnDrag.position.left - position.left;
+	    var topOffset = this.__objColumnDrag.position.top - position.top;
+	    var dragRadius = (leftOffset * leftOffset) + (topOffset * topOffset);
+	    if(!this.__objColumnDrag.dragElementAdded && dragRadius > this.__MIN_DRAG_OFFSET)
+	    {
+	    	document.body.appendChild(this.__objColumnDrag.dragElement);
+	    	this.__objColumnDrag.dragElementAdded = true;
+	    }
+	    //this.__positionDragElement(event);
+	    var posEvent = this.util.getEventPosition(event);
+	    this.__objColumnDrag.dragElement.style.left = posEvent.left + "px";
+        this.__objColumnDrag.dragElement.style.top = posEvent.top + "px";
+	    if(this.__objColumnDrag.lastDropTarget)
+	    {
+	    	this.util.removeStyleClass(this.__objColumnDrag.lastDropTarget,"nsDottedCell"); 
+	    	this.__objColumnDrag.lastDropTarget = null;
+	    }
+	    var target = this.util.getTarget(event);
+	    var element = this.util.findParentBySelector(target,"." + this.__nsGrid.__CLASS_TABLE_HEADER_DROPPABLE_CELL);
+	    if(element != this.__objColumnDrag.source)
+	    {
+	    	this.util.addStyleClass(element,"nsDottedCell");   
+	    	this.__objColumnDrag.lastDropTarget = element;
+	    }
+	    var objDrag = this.__getDragInfoObject(event,direction);
+	    this.__handleScrollMovement(objDrag);
+	    event.preventDefault();
+	};
+
+	this.__dragColumnEndHandler = function(event)
+	{
+		this.__lastDragEvent = null;
+		this.__isColumnDragged = false;
+		this.__stopScrollAnimation();
+		if(this.__objColumnDrag.lastDropTarget)
+	    {
+	    	this.util.removeStyleClass(this.__objColumnDrag.lastDropTarget,"nsDottedCell"); 
+	    	this.__objColumnDrag.lastDropTarget = null;
+	    }
+		this.util.removeEvent(document,"mousemove",this.__dragColumnMoveRef);
+		this.__dragColumnMoveRef = null;
+		this.util.removeEvent(document,"mouseup",this.__dragColumnEndRef);
+		this.__dragColumnEndRef = null;
+		if(this.__objColumnDrag.dragElementAdded)
+		{
+			var position = this.util.getEventPosition(event);
+			position.top = position.top + this.__nsGrid.__divCenterTableHeaderContainer.scrollTop;
+			position.left = position.left + this.__nsGrid.__divCenterTableHeaderContainer.scrollLeft;
+			var tablePosition = this.util.getOffSet(this.__nsGrid.__tblCenterHeader);
+			if (position.top < tablePosition.top || position.top > (tablePosition.top + this.__nsGrid.__tblCenterHeader.offsetHeight)) 
 			{
-				img.setAttribute("title",toolTip);
+				this.util.addStyleClass(this.__objColumnDrag.dragElement,"nsGhostHeader");
+				var transitionEndCallback = function()
+				{
+					this.__removeDragElement();
+				};
+				var transition = new this.util.transition(this.__objColumnDrag.dragElement,transitionEndCallback.bind(this));
+				this.__objColumnDrag.dragElement.style.left = (this.__objColumnDrag.position.left - this.__nsGrid.__divCenterTableHeaderContainer.scrollLeft) + "px"; //position.left + "px";
+				this.__objColumnDrag.dragElement.style.top = (this.__objColumnDrag.position.top ) + "px";
+			    return;
 			}
-			
-205: .nsTruncateToFit
+			var targetIndex = this.__getHeaderColumnByPosition(position);
+		    if (targetIndex > -1 && targetIndex != this.__objColumnDrag.columnIndex) 
+		    {
+		    	this.__nsGrid.swapColumns(this.__objColumnDrag.columnIndex,targetIndex);
+		    }
+		    this.__removeDragElement();
+		}
+	};
+	
+	this.__getScrollableContainer = function() 
+	{
+		var container = this.__nsGrid.__divCenterTableBodyContainer;
+		var docBody = document.documentElement || document.body;
+		if(!this.util.hasScrollbar(this.__nsGrid.__divCenterTableBodyContainer,"x") 
+				&& this.util.hasScrollbar(docBody,"x"))
+		{
+			container = docBody;
+		}
+		return container;
+	};
+	
+	this.__createCopyItem = function(target,position)
+	{
+		var divDrag = null;
+		if(target && position)
+		{
+			divDrag = this.util.createDiv(this.__nsGrid.getID() + "Drag",this.__nsGrid.__CLASS_TABLE_HEADER_CELL);
+			divDrag.innerHTML = target.innerHTML;
+			//divDrag.style.backgroundColor = "red";
+			divDrag.style.position = "absolute";
+			divDrag.style.left = (position.left) + "px";
+			divDrag.style.top = (position.top) + "px";
+			divDrag.style.width = target.offsetWidth + "px";
+			divDrag.style.height = target.offsetHeight + "px";
+			//divDrag.style.opacity = 0.7;
+		}
+		return divDrag;
+	};
+	
+	this.__positionDragElement = function(event)
+	{
+		var posEvent = this.util.getEventPosition(event);
+		var rectDragElement = this.__objColumnDrag.dragElement.getBoundingClientRect();
+        var objDimension = this.util.getDocumentDimension();
+        var browserWidth = objDimension.width - 2;
+        var browserHeight = objDimension.height - 2;
+        // put DragElement vertically in middle of cursor
+        var yPos = posEvent.top - (rectDragElement.height / 2);
+        // removing the icon width from xPos
+        var xPos = posEvent.left - 30;
+        if (browserWidth > 0) 
+        {
+            if ((xPos + this.__objColumnDrag.dragElement.clientWidth) > browserWidth) 
+            {
+            	xPos = browserWidth - this.__objColumnDrag.dragElement.clientWidth;
+            }
+        }
+        if (browserHeight > 0) 
+        {
+            if ((yPos + this.__objColumnDrag.dragElement.clientHeight) > browserHeight) 
+            {
+            	yPos = browserHeight - this.__objColumnDrag.dragElement.clientHeight;
+            }
+        }
+        xPos = Math.max(0,xPos);
+        yPos = Math.max(0,yPos);
+        this.__objColumnDrag.dragElement.style.left = xPos + "px";
+        this.__objColumnDrag.dragElement.style.top = yPos + "px";
+	};
+	
+	this.__removeDragElement = function()
+	{
+		if(this.__objColumnDrag && this.__objColumnDrag.dragElement)
+		{
+			document.body.removeChild(this.__objColumnDrag.dragElement);
+			this.__objColumnDrag.dragElement = null;
+		}
+	};
+
+	this.__getHeaderColumnByPosition = function(position) 
+	{
+		if(this.__nsGrid.__tblCenterHeader.tBodies && this.__nsGrid.__tblCenterHeader.tBodies.length > 0 && this.__nsGrid.__tblCenterHeader.tBodies[0].rows && this.__nsGrid.__tblCenterHeader.tBodies[0].rows.length > 0)
+		{
+			var headerBodyRowCells = this.__nsGrid.__tblCenterHeader.tBodies[0].rows[0].cells;
+		    for (var count = 0; count < headerBodyRowCells.length; count++) 
+		    {
+		    	var cell = headerBodyRowCells[count];
+		    	if(this.util.hasStyleClass(cell,this.__nsGrid.__CLASS_TABLE_HEADER_DROPPABLE_CELL))
+		    	{
+		    		var rowPosition = this.util.getOffSet(cell);
+			    	if (rowPosition.left <= position.left && position.left <= rowPosition.left + headerBodyRowCells[count].offsetWidth) 
+			    	{
+			    		return count;
+			    	}
+		    	}
+		    }
+		    return -1;
+		}
+	};
+	
+	/*Horizontal Scroll Logic for Edge cases */
+	this.__getDragDirection = function(event) 
+	{
+	    var direction = null;
+	    if (this.__lastDragEvent.clientX > event.clientX) 
+	    {
+	        direction = "left";
+	    }
+	    else if (this.__lastDragEvent.clientX < event.clientX) 
+	    {
+	        direction = "right";
+	    }
+	    return direction;
+	};
+
+	this.__getDragInfoObject = function(event,direction) 
+	{
+	    // localise x and y to the target component
+	    var rect = this.__nsGrid.__divCenterTableHeaderContainer.getBoundingClientRect();
+	    var x = event.clientX - rect.left;
+	    var y = event.clientY - rect.top;
+	    var objDragInfo = 
+	    {
+	        event: event,
+	        x: x,
+	        y: y,
+	        direction: direction
+	    };
+	    return objDragInfo;
+	};
+
+	this.__handleScrollMovement = function(objDragInfo) 
+	{
+		this.__lastDragInfo = objDragInfo;
+	    if (!objDragInfo || !objDragInfo.direction) 
+	    {
+	        return;
+	    }
+	    var adjustedScrollPos = this.__getAdjustedScrollPosition(objDragInfo);
+	    this.__setScrollVariables(adjustedScrollPos);
+	};
+
+	this.__getAdjustedScrollPosition = function(objDragInfo) 
+	{
+		return objDragInfo.x + this.__scrollableContainer.scrollLeft;
+	};
+
+	this.__setScrollVariables = function (adjustedScrollPos) 
+	{
+	    if (this.__scrollableContainer) 
+	    {
+	        //below logic checks if the scroll should move right or left
+	        var xPosLeft = this.__scrollableContainer.scrollLeft;
+	        var xPosRight = xPosLeft + this.__scrollableContainer.clientWidth;
+	        this.__scrollLeft = adjustedScrollPos < (xPosLeft + 50);
+	        this.__scrollRight = adjustedScrollPos > (xPosRight - 100);
+	        if(this.__scrollLeft || this.__scrollRight) 
+	        {
+	            this.__startScrollAnimation();
+	        }
+	        else 
+	        {
+	            this.__stopScrollAnimation();
+	        }
+	    }
+	};
+
+	this.__startScrollAnimation = function () 
+	{
+	    if (!this.__scrollInterval) 
+	    {
+	        this.__animationSteps = 0;
+	        this.__moveAttempts = 0;
+	        this.__scrollInterval = setInterval(this.__scrollBody.bind(this), 100);
+	        if (this.__scrollLeft) 
+	        {
+	        	this.__setIcon("left",true);
+	            //this.dragAndDropService.setGhostIcon(dragAndDropService_1.DragAndDropService.ICON_LEFT, true);
+	        }
+	        else 
+	        {
+	        	this.__setIcon("right",true);
+	            //this.dragAndDropService.setGhostIcon(dragAndDropService_1.DragAndDropService.ICON_RIGHT, true);
+	        }
+	    }
+	};
+	
+	this.__stopScrollAnimation = function () 
+	{
+	    if (this.__scrollInterval) 
+	    {
+	        clearInterval(this.__scrollInterval);
+	        this.__scrollInterval = null;
+	        this.__setIcon("move",false);
+	        //this.dragAndDropService.setGhostIcon(dragAndDropService_1.DragAndDropService.ICON_MOVE);
+	    }
+	};
+
+	this.__scrollBody = function () 
+	{
+	    var pixelsToMove;
+	    this.__animationSteps++;
+	    pixelsToMove = 10 + (this.__animationSteps * 5);
+	    if (pixelsToMove > 100) 
+	    {
+	        pixelsToMove = 100;
+	    }
+	    var pixelsMoved = 0;
+	    if (this.__scrollLeft) 
+	    {
+	        pixelsMoved = this.__scrollBodyHorizontally(-pixelsToMove);
+	    }
+	    else if (this.__scrollRight) 
+	    {
+	        pixelsMoved = this.__scrollBodyHorizontally(pixelsToMove);
+	    }
+	    if (pixelsMoved !== 0) 
+	    {
+	        this.__handleScrollMovement(this.__lastDragInfo);
+	        this.__moveAttempts = 0;
+	    }
+	    else 
+	    {
+	        this.__moveAttempts++;
+	        if (this.__moveAttempts > 7) 
+	        {
+	            if (this.__scrollLeft) 
+	            {
+	                //this.columnController.setColumnPinned(this.__lastDragInfo.dragItem, column_1.Column.PINNED_LEFT);
+	            }
+	            else 
+	            {
+	                //this.columnController.setColumnPinned(this.__lastDragInfo.dragItem, column_1.Column.PINNED_RIGHT);
+	            }
+	            this.__pushScroll();
+	        }
+	    }
+	};
+
+	this.__scrollBodyHorizontally = function (pixels) 
+	{
+	    var oldScrollPosition = this.__scrollableContainer.scrollLeft;
+	    this.__scrollableContainer.scrollLeft = oldScrollPosition + pixels;
+	    var newScrollPosition = this.__scrollableContainer.scrollLeft;
+	    return newScrollPosition - oldScrollPosition;
+	};
+
+	this.__pushScroll = function () 
+	{
+	    if (this.__isColumnDragged) 
+	    {
+	        this.__handleScrollMovement(this.__lastDragEvent);
+	    }
+	};
+	
+	this.__setIcon = function(iconName,animate)
+	{
+		if(iconName)
+		{
+			var icon = null;
+			var divDrag = this.__objColumnDrag.dragElement;
+			var divMove = divDrag.querySelector(".nsHeaderMove");
+			var imgUtil = this.__nsGrid.__imgUtil;
+			switch(iconName) 
+			{
+		         case "left":
+		        	 icon = imgUtil.getLeftIcon();
+		             break;
+		         case "right":
+		        	 icon = imgUtil.getRightIcon();
+		             break;
+		         case "move":
+		        	 icon = imgUtil.getMoveIcon();
+		             break;
+		         default:
+		        	 icon = null;
+		             break;
+			}
+			if(divMove)
+			{
+				this.util.removeAllChildren(divMove);
+				if(icon)
+				{
+					divMove.appendChild(icon);
+				}
+				animate ? this.util.addStyleClass(divMove,"nsAnimateLeftToRight") : this.util.removeStyleClass(divMove,"nsAnimateLeftToRight");
+			}
+		}
+	};
