@@ -20,7 +20,7 @@ var NSGridSort = function(nsGrid)
 	
 	this.reset = function()
 	{
-		this.__resetColumnHeaders();
+		this.__resetColumnHeaders(false);
 	};
 	
 	this.__handleSorting= function(header,columnDetail,customIsAscending)
@@ -44,7 +44,7 @@ var NSGridSort = function(nsGrid)
 			  }
 		   	  else
 		   	  {
-		   		  this.__resetColumnHeaders();
+		   		  this.__resetColumnHeaders(true);
 		   		  sortAscending = !columnDetail.sortDescending;
 		   	  }
 		   	  //customIsAscending is passed it overrides the setting in columnDetail
@@ -72,7 +72,7 @@ var NSGridSort = function(nsGrid)
 		   		  this.__nsGrid.__arrInternalSource = this.__nsGrid.__arrWrapper.slice(0);
 		   	  }
 		   	  this.__nsGrid.__renderBody(true);
-		   	  columnDetail[this.__nsGrid.__fieldColSortedAsc] = !sortAscending;
+		   	  columnDetail[this.__nsGrid.__fieldColSortedAsc] = sortAscending;
 	    }
 		else
 		{
@@ -108,7 +108,7 @@ var NSGridSort = function(nsGrid)
 	      {
 	          sortFunction = "__sortDate";
 	      }
-	      if (value.match(/^-?[£$¤]?[\d,.]+%?$/))
+	      if (value.match(/^-?[Â£$Â¤]?[\d,.]+%?$/))
 	      {
 	          sortFunction = "__sortCurrency";
 	      }
@@ -359,7 +359,7 @@ var NSGridSort = function(nsGrid)
 	     }
 	};
 
-	this.__resetColumnHeaders= function()
+	this.__resetColumnHeaders= function(isInternal)
 	{
 	     var tblHeaderBody = null;
 	     //safari doesnot support table.tHead
@@ -376,9 +376,12 @@ var NSGridSort = function(nsGrid)
 	     {
 	          this.__resetIndicators(headers[colCount]);
 	     }
-	     for (var colCount = 0; colCount < this.__nsGrid.__columns.length; colCount++)
+	     if(isInternal)
 	     {
-	    	 this.__nsGrid.__columns[colCount][this.__nsGrid.__fieldColSortedAsc] = null;
+	    	 for (var colCount = 0; colCount < this.__nsGrid.__columns.length; colCount++)
+		     {
+		    	 this.__nsGrid.__columns[colCount][this.__nsGrid.__fieldColSortedAsc] = null;
+		     }
 	     }
 	};
 
@@ -1239,7 +1242,7 @@ nsGrid.deviceViewChanged = function(conditionTrue,queryIndex,query)
 nsGrid.getState = function()
 {
 	var data = {};
-	data.columns = this.__orignalColumns;
+	data.columns = this.__columns;
 	return data;
 };
 
@@ -1271,8 +1274,6 @@ nsGrid.setColumn = function(arrColumns)
 		this.__orignalColumns = [];
 	}
 	this.__columns = this.__orignalColumns.slice(0);
-	this.__createStructure();
-	this.__addColumnPseudoStyle();
 };
 
 nsGrid.setContextMenuSetting = function(contextMenuSetting)
@@ -1285,6 +1286,8 @@ nsGrid.dataSource = function(source,isInternalCall)
 	var start = new Date().getTime();
 	this.__dataSource = source;
 	this.__rowsRendered = false;
+	this.__createStructure();
+	this.__addColumnPseudoStyle();
 	if(this.__dataSource && this.__dataSource.length > 0)
 	{
 		this.__objGrid.dataSource();
@@ -1296,12 +1299,16 @@ nsGrid.dataSource = function(source,isInternalCall)
 		this.__updateTotalRecords(0);
 	}
 	this.__setMeasurement();
-	this.__nsGridSort.reset();
+	if(isInternalCall)
+	{
+		this.__nsGridSort.reset();
+	}
 	this.__setHeaderSortFunction();
 	if(isInternalCall || !this.__processDefaultSort())
 	{
 		this.__renderBody(false);
 	}
+	this.__handleHiddenColumn();
 	
 	//this.style.display = "";
 	var end = new Date().getTime();
@@ -1594,15 +1601,28 @@ nsGrid.hideColumn = function(column)
 	var index = this.__getColumnIndexForSwapOrRemove(column);
 	if(index > -1)
 	{
-		if(this.__isColumnValidForSwapOrRemove(index,"deleted"))
+		if(this.__isColumnValidForSwapOrRemove(index,"hidden"))
 		{
-			this.__removeHeaderCell(index);
-			this.__removeBodyColumn(index);
-			this.__alignTables(false);
+			//this.__removeHeaderCell(index);
+			//this.__removeBodyColumn(index);
+			//this.__alignTables(false);
 			this.__editColumnArray("hide",index);
+			this.__setColumnVisibility(index,false);
 			this.__addColumnPseudoStyle();
 			return true;
 		}
+	}
+	return false;
+};
+
+nsGrid.showColumn = function(column)
+{
+	var index = this.__getColumnIndexForSwapOrRemove(column);
+	if(index > -1)
+	{
+		this.__editColumnArray("show",index);
+		this.__setColumnVisibility(index,true);
+		return true;
 	}
 	return false;
 };
@@ -1620,10 +1640,12 @@ nsGrid.swapColumns = function(sourceColumn,destinationColumn)
 			this.__swapHeaderCell(sourceIndex,destinationIndex);
 			this.__swapBodyCell(sourceIndex,destinationIndex);
 			this.__alignTables(false);
+			this.__columns[sourceIndex][this.__fieldColIndex] = destinationIndex;
+			this.__columns[destinationIndex][this.__fieldColIndex] = sourceIndex;
 			this.util.swapArrayItems(this.__columns,sourceIndex,destinationIndex);
-			var orignalSourceIndex = this.__getColumnIndexForSwapOrRemove(sourceColumn,this.__orignalColumns);
+			/*var orignalSourceIndex = this.__getColumnIndexForSwapOrRemove(sourceColumn,this.__orignalColumns);
 			var orignalDestinationIndex = this.__getColumnIndexForSwapOrRemove(destinationColumn,this.__orignalColumns);
-			this.util.swapArrayItems(this.__orignalColumns,orignalSourceIndex,orignalDestinationIndex);
+			this.util.swapArrayItems(this.__orignalColumns,orignalSourceIndex,orignalDestinationIndex);*/
 			this.__addColumnPseudoStyle();
 			return true;
 		}
@@ -2096,6 +2118,7 @@ nsGrid.__createHeaderBodyCell = function(colItem,bodyRow,rendererRow,index)
 		var bodyCell = bodyRow.insertCell(-1);
 		var colID = "col" + colItem["headerText"];
 		bodyCell.setAttribute("id",colID);
+		this.util.addStyleClass(bodyCell , "nsGridCell");
 		this.util.addStyleClass(bodyCell , this.__CLASS_TABLE_HEADER_CELL);
 		bodyCell.setAttribute("orignalColumnIndex",index);
 	    bodyCell.setAttribute("currentColumnIndex",index);
@@ -2156,6 +2179,7 @@ nsGrid.__createHeaderBodyCell = function(colItem,bodyRow,rendererRow,index)
 			}
 		}
 		var rendererCell = rendererRow.insertCell(-1);
+		this.util.addStyleClass(rendererCell,"nsGridCell");
 		this.util.addStyleClass(rendererCell,"nsDataGridHeaderRenderer");
 		this.__addFilterRenderer(rendererRow,rendererCell,colItem,index,colID);
 		this.__addPriorityClassInCell(bodyCell,colItem);
@@ -2327,6 +2351,8 @@ nsGrid.__swapHeaderCell = function(sourceIndex,destinationIndex)
 				var rendererRow = this.__tblCenterHeader.tBodies[0].rows[1];
 				var arrBodyCells = headerBodyRow.getElementsByTagName("td");
 				var arrRendererCells = rendererRow.getElementsByTagName("td");
+				arrBodyCells[sourceIndex].setAttribute("currentColumnIndex",destinationIndex);
+				arrBodyCells[destinationIndex].setAttribute("currentColumnIndex",sourceIndex);
 				this.__swapCell(arrBodyCells[sourceIndex],arrBodyCells[destinationIndex]);
 				this.__swapCell(arrRendererCells[sourceIndex],arrRendererCells[destinationIndex]);
 			}
@@ -2646,8 +2672,9 @@ nsGrid.__setBodyRowProperty = function(row,item,totalRowCount)
 nsGrid.__createBodyRowCell= function(row)
 {
     var cell = row.insertCell(-1);
-    //cell.className = "nsDataGridCell";
-    this.util.addStyleClass(cell , "nsDataGridCell");
+    //cell.className = "nsBodyDataGridCell";
+    this.util.addStyleClass(cell , "nsGridCell");
+    this.util.addStyleClass(cell , "nsBodyDataGridCell");
     var cellDiv = this.util.createDiv(null);
     cell.appendChild(cellDiv);
     return cell;
@@ -4450,16 +4477,29 @@ nsGrid.__createColumnProvider = function(arrColumns)
 		for (var count = 0;count < arrColumns.length;count++)
 		{
 			var objColumn = arrColumns[count];
-			if(!objColumn.hasOwnProperty(this.__fieldColVisible) || objColumn[this.__fieldColVisible])
+			var columnInfo = getOrignalColumnInfo(objColumn["dataField"]);
+			if(columnInfo)
 			{
-				var columnInfo = getOrignalColumnInfo(objColumn["dataField"]);
-				if(columnInfo)
+				if(objColumn.hasOwnProperty(this.__fieldColSortedAsc) && objColumn[this.__fieldColSortedAsc] != null)
 				{
-					if(objColumn.hasOwnProperty(this.__fieldColSortedAsc) && objColumn[this.__fieldColSortedAsc] != null)
-					{
-						columnInfo[this.__fieldColSortedAsc] = objColumn[this.__fieldColSortedAsc];
-					}
-					this.__columns.push(columnInfo);
+					columnInfo[this.__fieldColSortedAsc] = objColumn[this.__fieldColSortedAsc];
+				}
+				if(objColumn.hasOwnProperty(this.__fieldColIndex) && objColumn[this.__fieldColIndex] != null)
+				{
+					columnInfo[this.__fieldColIndex] = objColumn[this.__fieldColIndex];
+				}
+				if(objColumn.hasOwnProperty(this.__fieldColVisible) && objColumn[this.__fieldColVisible] != null)
+				{
+					columnInfo[this.__fieldColVisible] = objColumn[this.__fieldColVisible];
+				}
+				var index = columnInfo[this.__fieldColIndex];
+				if(this.__columns[index])
+				{
+					this.__columns.splice(index, 0, columnInfo);
+				}
+				else
+				{
+					this.__columns[index] = columnInfo;
 				}
 			}
 		}
@@ -4503,15 +4543,12 @@ nsGrid.__editColumnArray = function(mode,item)
 	else if(mode === "hide")
 	{
 		var colItem = this.__columns[item];
-		for (var colOrigItem in this.__orignalColumns)
-		{
-			if(colOrigItem["dataField"] === colItem["dataField"])
-			{
-				colOrigItem[this.__fieldColVisible] = false;
-				break;
-			}
-		}
-		this.__columns.splice(item, 1);
+		colItem[this.__fieldColVisible] = false;
+	}
+	else if(mode === "show")
+	{
+		var colItem = this.__columns[item];
+		colItem[this.__fieldColVisible] = true;
 	}
 };
 
@@ -4666,7 +4703,7 @@ nsGrid.__addStyleInDOM = function()
 {
 	if(this.__enableMouseHover)
     {
-		this.util.addCSSClassInDOM([".nsGridRow:hover > td"],["background-color: #CCCCCC!important;"]);
+		this.util.addCSSClassInDOM(["#" + this.getID() + " .nsGridRow:hover > td"],["background-color: #CCCCCC!important;"]);
     }
 };
 
@@ -4674,6 +4711,31 @@ nsGrid.__initializePluggins = function()
 {
 	this.__nsGridSort = new NSGridSort(this);
 	this.__nsGridColumnMove = new NSGridColumnMove(this);
+};
+
+nsGrid.__handleHiddenColumn = function()
+{
+	var length = this.__columns.length;
+	for(var count = 0;count < length;count++)
+	{
+		var objColumn = this.__columns[count];
+		if(objColumn[this.__fieldColVisible] === false)
+		{
+			this.__setColumnVisibility(count,false);
+		}
+	}
+};
+
+nsGrid.__setColumnVisibility = function(index,isVisible)
+{
+	if(isVisible)
+	{
+		this.util.removeCSSClassInDOM(["#" + this.getID() + " .nsGridCell:nth-child(" + (index + 1) +")"]);
+	}
+	else
+	{
+		this.util.addCSSClassInDOM(["#" + this.getID() + " .nsGridCell:nth-child(" + (index + 1) +")"],["display:none;"]);
+	}
 };
 
 nsGrid.__addColumnPseudoStyle = function()
@@ -4688,7 +4750,7 @@ nsGrid.__addColumnPseudoStyle = function()
         for(colIndex = 0; colIndex < headerCells.length; colIndex++)
         {
         	cell = headerCells[colIndex];
-        	arrClass.push(".nsMobileStackGrid td:nth-of-type(" + (colIndex + 1) + "):before");
+        	arrClass.push("#" + this.getID() + ".nsMobileStackGrid td:nth-of-type(" + (colIndex + 1) + "):before");
         	arrCSSText.push("content: '" + cell.textContent.trim() + "';");
         }
 	}
