@@ -1,219 +1,119 @@
- "use strict"; 
-function NSGroupingGrid(nsGrid,nsUtil) 
-{
-	this.__nsGrid = nsGrid;
-	this.util = nsUtil;
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.css">
+
+<link href="../lib/css/com/org/component.css" rel="stylesheet">
+<link href="../lib/css/com/org/nsNavigation.css" rel="stylesheet">
+<script src="../lib/com/org/util/nsUtil.js"></script>
+<script src="../lib/com/org/prototype/base/nsContainerBase.js"></script>
+<script src="../lib/com/org/prototype/nsDividerBox.js"></script>
+<script src="../lib/com/org/prototype/nsNavigation.js"></script>
+
+<title>Left Navigation demo</title>
+ <style>
+ 	body,html
+	{
+		margin:0px;
+		padding:0px;
+		height:100%;
+		background:#FFFFFF;
+	}
+	.themeDropdown 
+	{
+	    background: none repeat scroll 0 0 transparent;
+	    padding: 2px 10px;
+	}
+	.themeDropdown 
+	{
+	    color: black;
+	    background-color: white;
+	}
+	div.fixed 
+	{
+	    position: fixed;
+	    top: 0;
+	    right: 0;
+	    width: 300px;
+	}
 	
-	this.__groupCollection = null;
-	this.__groupSource = null;
-	this.__fieldColNameArrow = this.__nsGrid.getID() + "_arrow_field";
-	this.__rowCounter = -1;
-}
- /********************************Common Functions for Grid ****************************************/
-NSGroupingGrid.prototype.__initialize = function ()
-{
-};
-
-NSGroupingGrid.prototype.propertyChange = function(attrName, oldVal, newVal, setProperty) 
-{
-	var attributeName = attrName.toLowerCase();
-	if(attributeName === "groupbyfield")
-	{
-		this.__nsGrid.__groupByField = this.__nsGrid.getAttribute("groupByField");
-		this.__nsGrid.dataSource(this.__nsGrid.__dataSource);
-	}
-};
-
-NSGroupingGrid.prototype.dataSource = function(source)
-{
-	if(this.__nsGrid.__groupByField && this.__nsGrid.__groupByField.length > 0)
-	{
-		var arrGroupField = this.__nsGrid.__groupByField.split(",");
-		if(!this.__groupCollection)
-		{
-			this.__groupCollection = new this.util.groupCollection(this.__nsGrid.__dataSource,this.__nsGrid.__childField);
-		}
-		this.__groupSource = this.__groupCollection.groupBy(arrGroupField);
-		if(this.__groupSource)
-		{
-			this.__nsGrid.__arrWrapper = this.__groupSource.slice(0);
-			this.__setWrapperSource(this.__nsGrid.__arrWrapper,-1,0);
-		}
-		else
-		{
-			this.__nsGrid.__arrWrapper = [];
-		}
-		this.__nsGrid.__arrInternalSource = this.__nsGrid.__arrWrapper.slice(0);
-		this.__nsGrid.__updateTotalRecords();
-	}
-};
-
-NSGroupingGrid.prototype.__createBody = function()
-{
-};
-
-NSGroupingGrid.prototype.__createBodyBody= function(dataSet,startIndex,endIndex)
-{
-    if(dataSet && dataSet.length > 0)
-    {
-    	 for (var rowIndex = startIndex; rowIndex < endIndex; rowIndex++)
-	     {
-    		var item = dataSet[rowIndex];
-    		var row = item[this.__nsGrid.__fieldRowHtml];
-    		this.__nsGrid.__tblBodyBody.appendChild(row);
-    		if(item[this.__nsGrid.__fieldHasChild])
-    		{
-    			this.__createBodyBody(item[this.__nsGrid.__childField], startIndex, item[this.__nsGrid.__childField].length);
-    		}
-	     }
-    }
-};
-
-NSGroupingGrid.prototype.__checkForAdditionalColumns = function()
-{
-	var colArrow = {};
-	colArrow.headerText = "";
-	colArrow.dataField = this.__fieldColNameArrow;
-	colArrow.width = "50px";
-	colArrow.sortable = false;
-	colArrow.sortDescending = true;
-	colArrow.draggable = false;
-	colArrow.resizable = false;
-	colArrow.isExportable = false;
 	
-	this.__nsGrid.__columns.splice(0, 0, colArrow);
-};
-
-NSGroupingGrid.prototype.__setMeasurement = function()
-{
-};
-
-NSGroupingGrid.prototype.__addSVGInPage = function(objSVG)
-{
-	var plusID = "svgPlus";
-	var groupPlus = objSVG.createGroup(plusID + "group");
-	var circle = objSVG.createCircle(plusID + "circle",8,8,8);
-	groupPlus.appendChild(circle);
-	var horizontalLine = objSVG.createLine(plusID + "horizontalLine",2,7.5,14,7.5,"nsGridGroupIcon");
-	groupPlus.appendChild(horizontalLine);
-	var verticalLine = objSVG.createLine(plusID + "verticalLine",8,2,8,14,"nsGridGroupIcon");
-	groupPlus.appendChild(verticalLine);
-	objSVG.addElementInSymbol(plusID,"0 0 16 16",groupPlus);
-	var minusID = "svgMinus";
-	var groupMinus = objSVG.createGroup(minusID + "group");
-	circle = objSVG.createCircle(minusID + "circle",8,8,8);
-	groupMinus.appendChild(circle);
-	horizontalLine = objSVG.createLine(minusID + "horizontalLine",2,7.5,14,7.5,"nsGridGroupIcon");
-	groupMinus.appendChild(horizontalLine);
-	objSVG.addElementInSymbol(minusID,"0 0 16 16",groupMinus);
-};
-
-NSGroupingGrid.prototype.__setWrapperSource = function(source,offset,parentIndex,level)
-{
-	if(source)
-	{
-		if(!offset)
+ </style>
+</head>
+<body onload="initialize()">
+	<div class="nmPageContainer" style="min-height: 925px;">
+		<div id="divNav" class="nmPageNavigation">
+				
+		</div>
+		<div class="fixed">
+			<select id="cmbTheme" class="themeDropdown" onchange="themeChangehandler(event)">
+			</select>
+		</div>
+	</div>
+	<script>
+		var nsNav = null;
+		var arrTheme = [{label:"Select Theme",value:"",selected:false},{label:"White",value:"White",selected:true},{label:"Black",value:"Black",selected:false}];
+		function initialize()
 		{
-			offset = 0;
+			initializeThemeDropdown();
+			var dataSource = [{menuName:"Basic Elements",link:"#GroupA",iconBeforeHtml:"<i class='fa fa-sitemap'></i>",iconAfterHtml:null,click:"scrollToSection(this)",expanded:true,
+				childMenus:[{menuName:"Buttons",link:"#GroupASub1",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)"},
+				            {menuName:"Inputs",link:"#GroupASub2",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)"},
+				            {menuName:"Select",link:"#GroupASub3",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)"},
+				            {menuName:"Checkboxes",link:"#GroupASub4",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)"},
+				            {menuName:"Radio Buttons",link:"#GroupASub5",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)"},
+				            {menuName:"Switch",link:"#GroupASub6",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)"}]},
+				  {menuName:"Top Navbar",link:"#GroupB",iconBeforeHtml:"<i class='fa fa-sitemap'></i>",iconAfterHtml:null,click:"scrollToSection(this)",
+				  childMenus:[{menuName:"Navbar Version 1",link:"#GroupBSub1",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)"},
+				              {menuName:"Navbar Version 2",link:"#GroupBSub2",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)",disabled:true},
+				              {menuName:"Navbar Version 3",link:"#GroupBSub3",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)",selected:true}]},
+	              {menuName:"Left Navbar",link:"#GroupC",iconBeforeHtml:"<i class='fa fa-sitemap'></i>",iconAfterHtml:null,click:"scrollToSection(this)",expanded:true,
+	   			  childMenus:[{menuName:"Left Navbar",link:"#GroupCSub1",iconBeforeHtml:"<i class='fa fa-circle-o'></i>",iconAfterHtml:null,click:"scrollToSection(this)"}]},
+			];
+			var divNav = document.getElementById("divNav");
+			var setting = {header:"NSS2 NAVIGATION",pageHeaderContainer:null,showCollapseIcon:true,iconCollapse:"<i class='fa fa-bars pull-right'></i>",
+					titleField:"menuName",childField:"childMenus",iconPosition:"right",iconMenuExpanded:"<i class='fa fa-angle-left'></i>",
+					iconMenuCollapsed:"<i class='fa fa-angle-left'></i>",collapseTopOffset:50,
+					dataSource:dataSource};
+			
+			nsNav = new NSNavigation(divNav,setting);
+			
 		}
-		var length = source.length;
-		for (var count = 0; count < length; count++) 
+		function initializeThemeDropdown()
 		{
-			var item = source[count];
-			var row = document.createElement("TR");
-			item[this.__nsGrid.__fieldRowHtml] = row;
-			var index = ++this.__rowCounter + offset;
-			row.setAttribute("index",index);
-			this.__setBodyRowProperty(row,item,parentIndex,level);
-			var colLength = this.__nsGrid.__columns.length;
-			for (var colIndex = 0; colIndex < colLength; colIndex++)
-	        {
-	        	var colItem = this.__nsGrid.__columns[colIndex];
-	        	var cell =  row.insertCell(-1);
-	        	this.util.addStyleClass(cell , "nsDataGridCell");
-	            var cellDiv = this.util.createDiv(null);
-	            cell.appendChild(cellDiv);
-	            this.__setBodyCellProperty(row,cell,item,index,colItem,colIndex,parentIndex,level);
-	        }
+			var cmbTheme = document.getElementById("cmbTheme");
+		    for(var count = cmbTheme.options.length - 1 ;count >= 0 ; count--)
+		    {
+		    	cmbTheme.remove(count);
+		    }
+		    for(var count = 0 ;count < arrTheme.length ; count++)
+		    {
+		    	var option = document.createElement("option");
+		    	var item = arrTheme[count];
+		    	option.text = item["label"];
+		    	option.value = item["value"];
+		    	if(item.selected)
+		    	{
+		    		option.selected = true;
+		    		//nsNav.setTheme(item["value"]);
+		    	}
+		    	cmbTheme.add(option);
+		    }
 		}
-	}
-};
-/********************************End of Common Functions for Grid ****************************************/
-NSGroupingGrid.prototype.__setBodyRowProperty = function(row,item,parentIndex,level)
-{
-	if(row && item)
-	{
-		var totalRowCount = this.__rowCounter;
-		this.__nsGrid.__setBodyRowProperty(row,item,totalRowCount);
-		item[this.__nsGrid.__fieldIndex] = totalRowCount;
-		var hasChild = false;
-		if(item.hasOwnProperty(this.__nsGrid.__childField) && item[this.__nsGrid.__childField] && item[this.__nsGrid.__childField].length > 0)
-	    {
-	    	hasChild = true;
-	    	this.__setWrapperSource(item[this.__nsGrid.__childField],0,totalRowCount,level + 1);
-	    }
-		item[this.__nsGrid.__fieldParentIndex] = parentIndex;
-		if(parentIndex > -1)
-	    {
-			item[this.__nsGrid.__fieldHasParent] = true;
-			row.setAttribute("parent-index",parentIndex);
-	    }
-		else
+		function themeChangehandler(event)
 		{
-			item[this.__nsGrid.__fieldHasParent] = false;
+			var cmbTheme = document.getElementById("cmbTheme");
+			if(cmbTheme && cmbTheme.value != "")
+			{
+				var color = cmbTheme.value;
+				nsNav.setTheme(color);
+			}
 		}
-		item[this.__nsGrid.__fieldHasChild] = hasChild;
-		item[this.__nsGrid.__fieldRowVisible] = false;
-		item[this.__nsGrid.__fieldIsCollapsed] = false;
-	}
-};
-
-NSGroupingGrid.prototype.__setBodyCellProperty = function(row,cell,item,currentIndex,colItem,colIndex,parentIndex,level)
-{
-	var hierarchicalPadding = 0;
-	if(colItem && colItem.hasOwnProperty("dataField") && colItem["dataField"])
-	{
-		var cellDiv = cell.firstChild;
-        if(colIndex == 0 && item.hasOwnProperty(this.__nsGrid.__childField) && item[this.__nsGrid.__childField]  && item[this.__nsGrid.__childField].length > 0)
-        {
-        	this.util.addStyleClass(cellDiv,this.__nsGrid.__CLASS_GROUP_CELL);
-        	this.__nsGrid.__createArrow(currentIndex,cellDiv,false);
-        	var cellText = this.util.createDiv(null,this.__nsGrid.__CLASS_CELL_CHILD);
-        	cellText.style.verticalAlign = "top";
-        	this.__nsGrid.__addCellText(row,item,cellText,colItem,colIndex);
-        	cellDiv.appendChild(cellText);
-        }
-        else
-        {
-        	this.util.addStyleClass(cellDiv,this.__nsGrid.__CLASS_CELL_CHILD);
-        	this.__nsGrid.__addCellText(row,item,cellDiv,colItem,colIndex);
-        	//24 = 16(Arrow Width) + 6(Arrow Parent Padding) + 2(cellDiv horizontalGap between elements shown in debugger)
-        	hierarchicalPadding = 24;
-        }
-        if(colIndex == 0 && level === 0)
-        {
-    		cell.style.paddingLeft = "1px";
-        }
-	}
-	this.__nsGrid.__addPriorityClassInCell(cell,colItem);
-};
-
-NSGroupingGrid.prototype.__createArrow = function(compArrow,objSVG,arrowID)
-{
-	 var svg = objSVG.addSVG(compArrow,arrowID + "svg","nsGridGroupSVG",null,null,null,null,null,null,true);
-	 objSVG.addUse(svg,arrowID + "use",null,"#svgMinus");
-};
-
-NSGroupingGrid.prototype.__setArrowDirection = function(objSVG,useID,isCollapsed)
-{
-	if(isCollapsed)
-	{
-		objSVG.changeUseHref(useID,"#svgPlus");
-	}
-	else
-	{
-		objSVG.changeUseHref(useID,"#svgMinus");
-	}
-};
-
-
+	</script>
+</body>
+</html>
