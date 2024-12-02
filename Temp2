@@ -1,51 +1,376 @@
-.panelTitleBarContent{
-			color: #fefefe;
-		    font-weight: bold;
-		    font-size: large;
-		}
+import { OnInit, OnDestroy, ElementRef, EventEmitter, AfterViewInit } from '@angular/core';
+import { ControlValueAccessor } from '@angular/forms';
+export interface INSNumericTextBoxSetting {
+    type?: string;
+    enableDecimals?: boolean;
+    decimals?: number;
+    grouping?: number;
+    min?: number;
+    max?: number;
+    value?: string;
+    enableThousand?: boolean;
+    decimalSeparator?: string;
+    thousandSeparator?: string;
+    enableHover?: boolean;
+    theme?: string;
+    customClass?: any;
+    enableSpinner?: boolean;
+    incrementerProp?: any;
+    decrementerProp?: any;
+    step?: number;
+    format?: string;
+    enableRangeRoundOf?: boolean;
+    customFormatSpecifier?: string;
+}
+export declare class NSNumericTextBoxAngularComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
+    private elementRef;
+    private __input;
+    disabled: boolean;
+    setting: INSNumericTextBoxSetting;
+    modelChanged: EventEmitter<any>;
+    formatValueChanged: EventEmitter<any>;
+    spin: EventEmitter<any>;
+    valueChanged: EventEmitter<any>;
+    private __parentElement;
+    private __nsTextBox;
+    private __dataSource;
+    private __onChange;
+    private __onTouch;
+    constructor(elementRef: ElementRef);
+    ngOnInit(): void;
+    ngAfterViewInit(): void;
+    ngOnDestroy(): void;
+    writeValue(value: any): void;
+    registerOnChange(fn: any): void;
+    registerOnTouched(fn: any): void;
+    getElement(): HTMLElement;
+    getTextBox(): ElementRef;
+    setValue(text: any, fireEvent: boolean): void;
+    getValue(): number;
+    getFormattedValue(): string;
+    setTheme(theme: string): void;
+    private __eventHandler;
+}
 
-			var setting = {nsTitle:"NS Panel Demo",minWidth:300,minHeight:300,enableModal:true,enableCollapse:true,enableMinimization:true,
-							enableFullScreen:true,enableDrag:true, 
-					  		enableResize:true,enableTitleDblClick:true,enableMoveOnClick:true,
-					  		customClass:{container:null,titleBar:"panelTitleBar",titleBarContent:"panelTitleBarContent",iconConatiner:null,icon:null,body:null},
-					  		templateUrl:"../demo/demoTemplate.jsp"};
-                
-  "use strict"; 
-var nsPanel = Object.create(nsContainerBase);
-//http://codepen.io/zz85/pen/gbOoVP
-//http://jsfiddle.net/3jMQD/
-//https://github.com/zz85/sparks.js
-nsPanel.initializeComponent = function() 
-{
-	this.base.initializeComponent();
-	this.DRAG_STARTING = "dragStaring";
-	this.DRAGGING = "dragging";
-	this.DRAG_END = "dragEnd";
-	this.RESIZE_STARTING = "resizeStaring";
-	this.RESIZING = "resizing";
-	this.RESIZE_END = "resizeEnd";
-	this.MINIMIZE_STARTING = "minimizeStarting";
-	this.MINIMIZE_END = "minimizeEnd";
-	this.MAXIMIZE_STARTING = "maximizeStarting";
-	this.MAXIMIZE_END = "maximizeEnd";
-	
-	this.__nsPanel = null;
-};
 
-nsPanel.setSetting = function(setting)
-{
-	this.__nsPanel = new NSPanel(this,setting);
-	this.base.__setPrototype(this.__nsPanel);
-};
-
-nsPanel.openModal = function()
-{
-	this.__nsPanel.openModal.call(this.__nsPanel);
-};
-
-nsPanel.closeModal = function()
-{
-	this.__nsPanel.closeModal.call(this.__nsPanel);
-};
-
-document.registerElement("ns-panel", {prototype: nsPanel});
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
+ */
+import { Component, Input, Output, ElementRef, EventEmitter, ViewEncapsulation, ViewChild, forwardRef } from '@angular/core';
+import { NG_VALUE_ACCESSOR } from '@angular/forms';
+import { NSNumericTextBox } from 'nsnumerictextbox';
+/**
+ * @record
+ */
+export function INSNumericTextBoxSetting() { }
+if (false) {
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.type;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.enableDecimals;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.decimals;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.grouping;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.min;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.max;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.value;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.enableThousand;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.decimalSeparator;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.thousandSeparator;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.enableHover;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.theme;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.customClass;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.enableSpinner;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.incrementerProp;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.decrementerProp;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.step;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.format;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.enableRangeRoundOf;
+    /** @type {?|undefined} */
+    INSNumericTextBoxSetting.prototype.customFormatSpecifier;
+}
+var NSNumericTextBoxAngularComponent = /** @class */ (function () {
+    function NSNumericTextBoxAngularComponent(elementRef) {
+        this.elementRef = elementRef;
+        this.modelChanged = new EventEmitter();
+        this.formatValueChanged = new EventEmitter();
+        this.spin = new EventEmitter();
+        this.valueChanged = new EventEmitter();
+        this.__parentElement = elementRef.nativeElement;
+    }
+    ;
+    /**
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.ngOnInit = /**
+     * @return {?}
+     */
+    function () {
+        /** @type {?} */
+        var setting = this.setting;
+        setting.input = this.__input.nativeElement;
+        this.__nsTextBox = new NSNumericTextBox(setting);
+        /** @type {?} */
+        var util = new NSUtil();
+        /** @type {?} */
+        var eventHandler = this.__eventHandler.bind(this);
+        util.addEvent(setting.input, NSNumericTextBox.SPIN, eventHandler);
+        util.addEvent(setting.input, NSNumericTextBox.VALUE_CHANGED, eventHandler);
+    };
+    ;
+    /**
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.ngAfterViewInit = /**
+     * @return {?}
+     */
+    function () {
+    };
+    ;
+    /**
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.ngOnDestroy = /**
+     * @return {?}
+     */
+    function () {
+        if (this.__nsTextBox) {
+            this.__nsTextBox.remove();
+        }
+    };
+    ;
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.writeValue = /**
+     * @param {?} value
+     * @return {?}
+     */
+    function (value) {
+        this.setValue(value, false);
+    };
+    ;
+    /**
+     * @param {?} fn
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.registerOnChange = /**
+     * @param {?} fn
+     * @return {?}
+     */
+    function (fn) {
+        this.__onChange = fn;
+    };
+    /**
+     * @param {?} fn
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.registerOnTouched = /**
+     * @param {?} fn
+     * @return {?}
+     */
+    function (fn) {
+        this.__onTouch = fn;
+    };
+    /**
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.getElement = /**
+     * @return {?}
+     */
+    function () {
+        return this.__parentElement;
+    };
+    ;
+    /**
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.getTextBox = /**
+     * @return {?}
+     */
+    function () {
+        return this.__input;
+    };
+    ;
+    /**
+     * @param {?} text
+     * @param {?} fireEvent
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.setValue = /**
+     * @param {?} text
+     * @param {?} fireEvent
+     * @return {?}
+     */
+    function (text, fireEvent) {
+        this.__nsTextBox.setValue(text, fireEvent);
+    };
+    ;
+    /**
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.getValue = /**
+     * @return {?}
+     */
+    function () {
+        return this.__nsTextBox.getValue();
+    };
+    ;
+    /**
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.getFormattedValue = /**
+     * @return {?}
+     */
+    function () {
+        return this.__nsTextBox.getFormattedValue();
+    };
+    ;
+    /**
+     * @param {?} theme
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.setTheme = /**
+     * @param {?} theme
+     * @return {?}
+     */
+    function (theme) {
+        this.__nsTextBox.setTheme(theme);
+    };
+    ;
+    /**
+     * @private
+     * @param {?} event
+     * @return {?}
+     */
+    NSNumericTextBoxAngularComponent.prototype.__eventHandler = /**
+     * @private
+     * @param {?} event
+     * @return {?}
+     */
+    function (event) {
+        if (event.type == NSNumericTextBox.VALUE_CHANGED) {
+            /** @type {?} */
+            var newValue = event.detail.newValue;
+            if (this.__onChange) {
+                this.__onChange(newValue);
+                this.__onTouch(newValue);
+                this.modelChanged.emit(newValue);
+                this.formatValueChanged.emit(this.getFormattedValue());
+            }
+        }
+        if (this[event.type]) {
+            this[event.type].emit(event.detail);
+        }
+    };
+    NSNumericTextBoxAngularComponent.decorators = [
+        { type: Component, args: [{
+                    selector: 'ns-numericTextbox-angular',
+                    template: '<input type="text" [disabled]="disabled" #txtRef>',
+                    providers: [
+                        { provide: NG_VALUE_ACCESSOR,
+                            useExisting: forwardRef((/**
+                             * @return {?}
+                             */
+                            function () { return NSNumericTextBoxAngularComponent; })),
+                            multi: true
+                        }
+                    ],
+                    encapsulation: ViewEncapsulation.None
+                }] }
+    ];
+    /** @nocollapse */
+    NSNumericTextBoxAngularComponent.ctorParameters = function () { return [
+        { type: ElementRef }
+    ]; };
+    NSNumericTextBoxAngularComponent.propDecorators = {
+        __input: [{ type: ViewChild, args: ['txtRef', { static: false },] }],
+        disabled: [{ type: Input }],
+        setting: [{ type: Input }],
+        modelChanged: [{ type: Output }],
+        formatValueChanged: [{ type: Output }],
+        spin: [{ type: Output }],
+        valueChanged: [{ type: Output }]
+    };
+    return NSNumericTextBoxAngularComponent;
+}());
+export { NSNumericTextBoxAngularComponent };
+if (false) {
+    /**
+     * @type {?}
+     * @private
+     */
+    NSNumericTextBoxAngularComponent.prototype.__input;
+    /** @type {?} */
+    NSNumericTextBoxAngularComponent.prototype.disabled;
+    /** @type {?} */
+    NSNumericTextBoxAngularComponent.prototype.setting;
+    /** @type {?} */
+    NSNumericTextBoxAngularComponent.prototype.modelChanged;
+    /** @type {?} */
+    NSNumericTextBoxAngularComponent.prototype.formatValueChanged;
+    /** @type {?} */
+    NSNumericTextBoxAngularComponent.prototype.spin;
+    /** @type {?} */
+    NSNumericTextBoxAngularComponent.prototype.valueChanged;
+    /**
+     * @type {?}
+     * @private
+     */
+    NSNumericTextBoxAngularComponent.prototype.__parentElement;
+    /**
+     * @type {?}
+     * @private
+     */
+    NSNumericTextBoxAngularComponent.prototype.__nsTextBox;
+    /**
+     * @type {?}
+     * @private
+     */
+    NSNumericTextBoxAngularComponent.prototype.__dataSource;
+    /**
+     * @type {?}
+     * @private
+     */
+    NSNumericTextBoxAngularComponent.prototype.__onChange;
+    /**
+     * @type {?}
+     * @private
+     */
+    NSNumericTextBoxAngularComponent.prototype.__onTouch;
+    /**
+     * @type {?}
+     * @private
+     */
+    NSNumericTextBoxAngularComponent.prototype.elementRef;
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+    /* Skipping unhandled member: ;*/
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoibnNOdW1lcmljVGV4dEJveEFuZ3VsYXIuY29tcG9uZW50LmpzIiwic291cmNlUm9vdCI6Im5nOi8vbnMtbnVtZXJpY3RleHRib3gtYW5ndWxhci8iLCJzb3VyY2VzIjpbImxpYi9uc051bWVyaWNUZXh0Qm94QW5ndWxhci5jb21wb25lbnQudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7OztBQUFBLE9BQU8sRUFBRSxTQUFTLEVBQUUsS0FBSyxFQUFFLE1BQU0sRUFBZ0MsVUFBVSxFQUFnQixZQUFZLEVBQ25HLGlCQUFpQixFQUErQixTQUFTLEVBQUUsVUFBVSxFQUFlLE1BQU0sZUFBZSxDQUFDO0FBRTlHLE9BQU8sRUFBd0IsaUJBQWlCLEVBQUUsTUFBTSxnQkFBZ0IsQ0FBQztBQUV6RSxPQUFPLEVBQUMsZ0JBQWdCLEVBQUMsTUFBTSxrQkFBa0IsQ0FBQzs7OztBQU1sRCw4Q0FxQkM7OztJQXBCRyx3Q0FBYzs7SUFDZCxrREFBeUI7O0lBQ3pCLDRDQUFrQjs7SUFDbEIsNENBQWtCOztJQUNsQix1Q0FBYTs7SUFDYix1Q0FBYTs7SUFDYix5Q0FBZTs7SUFDZixrREFBeUI7O0lBQ3pCLG9EQUEwQjs7SUFDMUIscURBQTJCOztJQUMzQiwrQ0FBc0I7O0lBQ3RCLHlDQUFlOztJQUNmLCtDQUFrQjs7SUFDbEIsaURBQXdCOztJQUN4QixtREFBc0I7O0lBQ3RCLG1EQUFzQjs7SUFDdEIsd0NBQWM7O0lBQ2QsMENBQWdCOztJQUNoQixzREFBNkI7O0lBQzdCLHlEQUErQjs7QUFHbkM7SUE4QkksMENBQW9CLFVBQXFCO1FBQXJCLGVBQVUsR0FBVixVQUFVLENBQVc7UUFaL0IsaUJBQVksR0FBRyxJQUFJLFlBQVksRUFBRSxDQUFDO1FBQ2xDLHVCQUFrQixHQUFHLElBQUksWUFBWSxFQUFFLENBQUM7UUFDeEMsU0FBSSxHQUFxQixJQUFJLFlBQVksRUFBRSxDQUFDO1FBQzVDLGlCQUFZLEdBQXFCLElBQUksWUFBWSxFQUFFLENBQUM7UUFXMUQsSUFBSSxDQUFDLGVB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QUFDLElBQUksQ0FBQyxJQUFJLENBQUMsaUJBQWlCLEVBQUUsQ0FBQyxDQUFDO2FBQzFEO1NBQ0o7UUFDRCxJQUFHLElBQUksQ0FBQyxLQUFLLENBQUMsSUFBSSxDQUFDLEVBQ25CO1lBQ0ksSUFBSSxDQUFDLEtBQUssQ0FBQyxJQUFJLENBQUMsQ0FBQyxJQUFJLENBQUMsS0FBSyxDQUFDLE1BQU0sQ0FBQyxDQUFDO1NBQ3ZDO0lBQ0wsQ0FBQzs7Z0JBeEhKLFNBQVMsU0FBQztvQkFDVCxRQUFRLEVBQUUsMkJBQTJCO29CQUNyQyxRQUFRLEVBQUUsbURBQW1EO29CQUM3RCxTQUFTLEVBQUU7d0JBQ1gsRUFBTSxPQUFPLEVBQUUsaUJBQWlCOzRCQUMxQixXQUFXLEVBQUUsVUFBVTs7OzRCQUFDLGNBQU0sT0FBQSxnQ0FBZ0MsRUFBaEMsQ0FBZ0MsRUFBQzs0QkFDL0QsS0FBSyxFQUFFLElBQUk7eUJBQ2hCO3FCQUFDO29CQUNGLGFBQWEsRUFBRSxpQkFBaUIsQ0FBQyxJQUFJO2lCQUN0Qzs7OztnQkEzQ2dFLFVBQVU7OzswQkErQ3RFLFNBQVMsU0FBQyxRQUFRLEVBQUMsRUFBQyxNQUFNLEVBQUUsS0FBSyxFQUFDOzJCQUdsQyxLQUFLOzBCQUNMLEtBQUs7K0JBQ0wsTUFBTTtxQ0FDTixNQUFNO3VCQUNOLE1BQU07K0JBQ04sTUFBTTs7SUFvR1gsdUNBQUM7Q0FBQSxBQXpIRCxJQXlIQztTQTlHWSxnQ0FBZ0M7Ozs7OztJQUV6QyxtREFDNkI7O0lBRTdCLG9EQUEyQjs7SUFDM0IsbURBQTJDOztJQUMzQyx3REFBNEM7O0lBQzVDLDhEQUFrRDs7SUFDbEQsZ0RBQXNEOztJQUN0RCx3REFBOEQ7Ozs7O0lBRTlELDJEQUFxQzs7Ozs7SUFDckMsdURBQXlCOzs7OztJQUN6Qix3REFBMkI7Ozs7O0lBRTNCLHNEQUF1Qjs7Ozs7SUFDdkIscURBQXNCOzs7OztJQUVWLHNEQUE2QiIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IENvbXBvbmVudCwgSW5wdXQsIE91dHB1dCwgT25DaGFuZ2VzLCBPbkluaXQsIE9uRGVzdHJveSwgRWxlbWVudFJlZiwgU2ltcGxlQ2hhbmdlLCBFdmVudEVtaXR0ZXIsXHJcbiAgICBWaWV3RW5jYXBzdWxhdGlvbiwgQWZ0ZXJWaWV3SW5pdCwgVmlld0NoaWxkcmVuLCBWaWV3Q2hpbGQsIGZvcndhcmRSZWYsIEhvc3RCaW5kaW5nIH0gZnJvbSAnQGFuZ3VsYXIvY29yZSc7XHJcblxyXG5pbXBvcnQgeyBDb250cm9sVmFsdWVBY2Nlc3NvciwgTkdfVkFMVUVfQUNDRVNTT1IgfSBmcm9tICdAYW5ndWxhci9mb3Jtcyc7XHJcblxyXG5pbXBvcnQge05TTnVtZXJpY1RleHRCb3h9IGZyb20gJ25zbnVtZXJpY3RleHRib3gnO1xyXG5cclxuZGVjbGFyZSB2YXIgTlNVdGlsOiBhbnk7XHJcblxyXG4vLy8vLy8vLy8vIEludGVyZmFjZXMgLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vXHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIElOU051bWVyaWNUZXh0Qm94U2V0dGluZyB7XHJcbiAgICB0eXBlPzogc3RyaW5nO1xyXG4gICAgZW5hYmxlRGVjaW1hbHM/OiBib29sZWFuO1xyXG4gICAgZGVjaW1hbHM/OiBudW1iZXI7XHJcbiAgICBncm91cGluZz86IG51bWJlcjtcclxuICAgIG1pbj86IG51bWJlcjtcclxuICAgIG1heD86IG51bWJlcjtcclxuICAgIHZhbHVlPzogc3RyaW5nO1xyXG4gICAgZW5hYmxlVGhvdXNhbmQ/OiBib29sZWFuO1xyXG4gICAgZGVjaW1hbFNlcGFyYXRvcj86IHN0cmluZztcclxuICAgIHRob3VzYW5kU2VwYXJhdG9yPzogc3RyaW5nO1xyXG4gICAgZW5hYmxlSG92ZXI/OiBib29sZWFuO1xyXG4gICAgdGhlbWU/OiBzdHJpbmc7XHJcbiAgICBjdXN0b21DbGFzcz86IGFueTtcclxuICAgIGVuYWJsZVNwaW5uZXI/OiBib29sZWFuO1xyXG4gICAgaW5jcmVtZW50ZXJQcm9wPzogYW55O1xyXG4gICAgZGVjcmVtZW50ZXJQcm9wPzogYW55O1xyXG4gICAgc3RlcD86IG51bWJlcjtcclxuICAgIGZvcm1hdD86IHN0cmluZztcclxuICAgIGVuYWJsZVJhbmdlUm91bmRPZj86IGJvb2xlYW47XHJcbiAgICBjdXN0b21Gb3JtYXRTcGVjaWZpZXI/OiBzdHJpbmc7XHJcbn1cclxuXHJcbkBDb21wb25lbnQoe1xyXG4gIHNlbGVjdG9yOiAnbnMtbnVtZXJpY1RleHRib3gtYW5ndWxhcicsXHJcbiAgdGVtcGxhdGU6ICc8aW5wdXQgdHlwZT1cInRleHRcIiBbZGlzYWJsZWRdPVwiZGlzYWJsZWRcIiAjdHh0UmVmPicsXHJcbiAgcHJvdmlkZXJzOiBbICAgICBcclxuICB7ICAgICBwcm92aWRlOiBOR19WQUxVRV9BQ0NFU1NPUiwgXHJcbiAgICAgICAgdXNlRXhpc3Rpbmc6IGZvcndhcmRSZWYoKCkgPT4gTlNOdW1lcmljVGV4dEJveEFuZ3VsYXJDb21wb25lbnQpLFxyXG4gICAgICAgIG11bHRpOiB0cnVlICAgICBcclxuICB9XSxcclxuICBlbmNhcHN1bGF0aW9uOiBWaWV3RW5jYXBzdWxhdGlvbi5Ob25lXHJcbn0pXHJcblxyXG5leHBvcnQgY2xhc3MgTlNOdW1lcmljVGV4dEJveEFuZ3VsYXJDb21wb25lbnQgaW1wbGVtZW50cyBPbkluaXQsIE9uRGVzdHJveSwgQWZ0ZXJWaWV3SW5pdCwgQ29udHJvbFZhbHVlQWNjZXNzb3JcclxueyAgXHJcbiAgICBAVmlld0NoaWxkKCd0eHRSZWYnLHtzdGF0aWM6IGZhbHNlfSkgXHJcbiAgICBwcml2YXRlIF9faW5wdXQgOiBFbGVtZW50UmVmO1xyXG4gICAgXHJcbiAgICBASW5wdXQoKSBkaXNhYmxlZDogYm9vbGVhbjtcclxuICAgIEBJbnB1dCgpIHNldHRpbmc6IElOU051bWVyaWNUZXh0Qm94U2V0dGluZztcclxuICAgIEBPdXRwdXQoKSBtb2RlbENoYW5nZWQgPSBuZXcgRXZlbnRFbWl0dGVyKCk7XHJcbiAgICBAT3V0cHV0KCkgZm9ybWF0VmFsdWVDaGFuZ2VkID0gbmV3IEV2ZW50RW1pdHRlcigpO1xyXG4gICAgQE91dHB1dCgpIHNwaW46RXZlbnRFbWl0dGVyPGFueT4gPSBuZXcgRXZlbnRFbWl0dGVyKCk7XHJcbiAgICBAT3V0cHV0KCkgdmFsdWVDaGFuZ2VkOkV2ZW50RW1pdHRlcjxhbnk+ID0gbmV3IEV2ZW50RW1pdHRlcigpO1xyXG4gICBcclxuICAgIHByaXZhdGUgX19wYXJlbnRFbGVtZW50OiBIVE1MRWxlbWVudDtcclxuICAgIHByaXZhdGUgX19uc1RleHRCb3g6IGFueTtcclxuICAgIHByaXZhdGUgX19kYXRhU291cmNlOmFueVtdO1xyXG4gICAgXHJcbiAgICBwcml2YXRlIF9fb25DaGFuZ2U6YW55O1xyXG4gICAgcHJpdmF0ZSBfX29uVG91Y2g6YW55O1xyXG5cclxuICAgIGNvbnN0cnVjdG9yKHByaXZhdGUgZWxlbWVudFJlZjpFbGVtZW50UmVmKSBcclxuICAgIHtcclxuICAgICAgICB0aGlzLl9fcGFyZW50RWxlbWVudCA9IGVsZW1lbnRSZWYubmF0aXZlRWxlbWVudDtcclxuICAgIH07XHJcbiAgXHJcbiAgICBuZ09uSW5pdCgpIDogdm9pZFxyXG4gICAge1xyXG4gICAgICAgIGxldCBzZXR0aW5nOiBhbnkgPSB0aGlzLnNldHRpbmc7XHJcbiAgICAgICAgc2V0dGluZy5pbnB1dCA9IHRoaXMuX19pbnB1dC5uYXRpdmVFbGVtZW50O1xyXG4gICAgICAgIHRoaXMuX19uc1RleHRCb3ggPSBuZXcgTlNOdW1lcmljVGV4dEJveChzZXR0aW5nKTtcclxuICAgICAgICBsZXQgdXRpbCA9IG5ldyBOU1V0aWwoKTtcclxuICAgICAgICBsZXQgZXZlbnRIYW5kbGVyOmFueSA9IHRoaXMuX19ldmVudEhhbmRsZXIuYmluZCh0aGlzKTtcclxuICAgICAgICB1dGlsLmFkZEV2ZW50KHNldHRpbmcuaW5wdXQsTlNOdW1lcmljVGV4dEJveC5TUElOLGV2ZW50SGFuZGxlcik7XHJcbiAgICAgICAgdXRpbC5hZGRFdmVudChzZXR0aW5nLmlucHV0LE5TTnVtZXJpY1RleHRCb3guVkFMVUVfQ0hBTkdFRCxldmVudEhhbmRsZXIpO1xyXG4gICAgfTtcclxuICBcclxuICAgIG5nQWZ0ZXJWaWV3SW5pdCgpOiB2b2lkIFxyXG4gICAge1xyXG4gICAgfTtcclxuICBcclxuICAgIG5nT25EZXN0cm95KCk6IHZvaWQgXHJcbiAgICB7XHJcbiAgICAgICAgaWYodGhpcy5fX25zVGV4dEJveClcclxuICAgICAgICB7XHJcbiAgICAgICAgICAgIHRoaXMuX19uc1RleHRCb3gucmVtb3ZlKCk7XHJcbiAgICAgICAgfVxyXG4gICAgfTtcclxuICAgIFxyXG4gICAgd3JpdGVWYWx1ZSh2YWx1ZSkgXHJcbiAgICB7XHJcbiAgICAgICAgdGhpcy5zZXRWYWx1ZSh2YWx1ZSxmYWxzZSk7XHJcbiAgICB9O1xyXG4gICAgXHJcbiAgICByZWdpc3Rlck9uQ2hhbmdlKGZuOiBhbnkpXHJcbiAgICB7XHJcbiAgICAgICAgdGhpcy5fX29uQ2hhbmdlID0gZm5cclxuICAgIH1cclxuXHJcbiAgICByZWdpc3Rlck9uVG91Y2hlZChmbjogYW55KVxyXG4gICAge1xyXG4gICAgICAgIHRoaXMuX19vblRvdWNoID0gZm5cclxuICAgIH1cclxuICAgIFxyXG4gICAgZ2V0RWxlbWVudCgpOiBIVE1MRWxlbWVudFxyXG4gICAge1xyXG4gICAgICAgIHJldHVybiB0aGlzLl9fcGFyZW50RWxlbWVudDtcclxuICAgIH07XHJcbiAgICBcclxuICAgIGdldFRleHRCb3goKTogRWxlbWVudFJlZlxyXG4gICAge1xyXG4gICAgICAgIHJldHVybiB0aGlzLl9faW5wdXQ7XHJcbiAgICB9O1xyXG4gICAgXHJcbiAgICBzZXRWYWx1ZSh0ZXh0OiBhbnksZmlyZUV2ZW50OiBib29sZWFuKTogdm9pZFxyXG4gICAge1xyXG4gICAgICAgIHRoaXMuX19uc1RleHRCb3guc2V0VmFsdWUodGV4dCxmaXJlRXZlbnQpO1xyXG4gICAgfTtcclxuICAgIFxyXG4gICAgZ2V0VmFsdWUoKTogbnVtYmVyXHJcbiAgICB7XHJcbiAgICAgICAgcmV0dXJuIHRoaXMuX19uc1RleHRCb3guZ2V0VmFsdWUoKTtcclxuICAgIH07XHJcbiAgICBcclxuICAgIGdldEZvcm1hdHRlZFZhbHVlKCk6IHN0cmluZ1xyXG4gICAge1xyXG4gICAgICAgIHJldHVybiB0aGlzLl9fbnNUZXh0Qm94LmdldEZvcm1hdHRlZFZhbHVlKCk7XHJcbiAgICB9O1xyXG4gICAgXHJcbiAgICBzZXRUaGVtZSh0aGVtZTogc3RyaW5nKTogdm9pZFxyXG4gICAge1xyXG4gICAgICAgIHRoaXMuX19uc1RleHRCb3guc2V0VGhlbWUodGhlbWUpO1xyXG4gICAgfTtcclxuICBcclxuICAgIHByaXZhdGUgX19ldmVudEhhbmRsZXIoZXZlbnQ6YW55KVxyXG4gICAge1xyXG4gICAgICAgIGlmKGV2ZW50LnR5cGUgPT0gTlNOdW1lcmljVGV4dEJveC5WQUxVRV9DSEFOR0VEKVxyXG4gICAgICAgIHtcclxuICAgICAgICAgICAgbGV0IG5ld1ZhbHVlID0gZXZlbnQuZGV0YWlsLm5ld1ZhbHVlO1xyXG4gICAgICAgICAgICBpZih0aGlzLl9fb25DaGFuZ2UpXHJcbiAgICAgICAgICAgIHtcclxuICAgICAgICAgICAgICAgIHRoaXMuX19vbkNoYW5nZShuZXdWYWx1ZSk7XHJcbiAgICAgICAgICAgICAgICB0aGlzLl9fb25Ub3VjaChuZXdWYWx1ZSk7XHJcbiAgICAgICAgICAgICAgICB0aGlzLm1vZGVsQ2hhbmdlZC5lbWl0KG5ld1ZhbHVlKTtcclxuICAgICAgICAgICAgICAgIHRoaXMuZm9ybWF0VmFsdWVDaGFuZ2VkLmVtaXQodGhpcy5nZXRGb3JtYXR0ZWRWYWx1ZSgpKTtcclxuICAgICAgICAgICAgfVxyXG4gICAgICAgIH1cclxuICAgICAgICBpZih0aGlzW2V2ZW50LnR5cGVdKVxyXG4gICAgICAgIHtcclxuICAgICAgICAgICAgdGhpc1tldmVudC50eXBlXS5lbWl0KGV2ZW50LmRldGFpbCk7XHJcbiAgICAgICAgfVxyXG4gICAgfVxyXG59Il19
